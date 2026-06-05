@@ -1,0 +1,432 @@
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-sans); }
+.wrap { padding: 1rem 0; }
+.top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 12px; }
+.top-bar h1 { font-size: 18px; font-weight: 500; color: var(--color-text-primary); display: flex; align-items: center; gap: 8px; }
+.metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 1.5rem; }
+.metric { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 14px 16px; }
+.metric .lbl { font-size: 12px; color: var(--color-text-secondary); margin-bottom: 6px; }
+.metric .val { font-size: 22px; font-weight: 500; color: var(--color-text-primary); }
+.metric .sub { font-size: 11px; color: var(--color-text-tertiary); margin-top: 3px; }
+.section { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1rem 1.25rem; margin-bottom: 1rem; }
+.section-title { font-size: 13px; font-weight: 500; color: var(--color-text-secondary); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+.filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1.5rem; align-items: center; }
+.filters select, .filters input { font-size: 13px; padding: 6px 10px; border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-secondary); background: var(--color-background-primary); color: var(--color-text-primary); height: 34px; }
+.filters label { font-size: 12px; color: var(--color-text-secondary); }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th { font-size: 11px; font-weight: 500; color: var(--color-text-secondary); text-align: left; padding: 8px 10px; border-bottom: 0.5px solid var(--color-border-tertiary); white-space: nowrap; background: var(--color-background-secondary); }
+td { padding: 8px 10px; border-bottom: 0.5px solid var(--color-border-tertiary); color: var(--color-text-primary); white-space: nowrap; vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--color-background-secondary); }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+.badge.on-road { background: #EAF3DE; color: #3B6D11; }
+.badge.off-road { background: #FCEBEB; color: #A32D2D; }
+.badge.yes { background: #FAEEDA; color: #854F0B; }
+.badge.no { background: var(--color-background-secondary); color: var(--color-text-secondary); }
+.btn { font-size: 13px; padding: 6px 14px; border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-secondary); background: var(--color-background-primary); color: var(--color-text-primary); cursor: pointer; display: inline-flex; align-items: center; gap: 5px; height: 34px; }
+.btn:hover { background: var(--color-background-secondary); }
+.btn.primary { background: #185FA5; color: #fff; border-color: #185FA5; }
+.btn.primary:hover { background: #0C447C; }
+.tabs { display: flex; gap: 4px; margin-bottom: 1.25rem; border-bottom: 0.5px solid var(--color-border-tertiary); padding-bottom: 0; }
+.tab { font-size: 13px; padding: 7px 14px; cursor: pointer; border-radius: var(--border-radius-md) var(--border-radius-md) 0 0; color: var(--color-text-secondary); border: 0.5px solid transparent; border-bottom: none; position: relative; bottom: -0.5px; }
+.tab.active { color: var(--color-text-primary); font-weight: 500; background: var(--color-background-primary); border-color: var(--color-border-tertiary); border-bottom-color: var(--color-background-primary); }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+.charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1rem; }
+.chart-box { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1rem 1.25rem; }
+.chart-box canvas { max-height: 200px; }
+.report-form { display: grid; gap: 12px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-group label { font-size: 12px; color: var(--color-text-secondary); display: block; margin-bottom: 4px; }
+.form-group input, .form-group select { width: 100%; font-size: 13px; padding: 7px 10px; border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-secondary); background: var(--color-background-primary); color: var(--color-text-primary); }
+.report-preview { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 1rem; margin-top: 1rem; font-size: 13px; color: var(--color-text-secondary); min-height: 80px; }
+.add-form { display: grid; gap: 10px; }
+.add-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.add-form .form-group input, .add-form .form-group select { width: 100%; }
+.savings-pos { color: #3B6D11; font-weight: 500; }
+.savings-zero { color: var(--color-text-tertiary); }
+.empty { color: var(--color-text-tertiary); font-size: 13px; text-align: center; padding: 24px; }
+</style>
+
+<div class="wrap">
+  <div class="top-bar">
+    <h1><i class="ti ti-truck" aria-hidden="true" style="font-size:20px; color:#185FA5;"></i> Fleet Management System</h1>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <span id="last-updated" style="font-size:12px;color:var(--color-text-tertiary);"></span>
+      <button class="btn" onclick="exportCSV()"><i class="ti ti-download" aria-hidden="true"></i> Export CSV</button>
+      <button class="btn primary" onclick="showTab('add')"><i class="ti ti-plus" aria-hidden="true"></i> Add Entry</button>
+    </div>
+  </div>
+
+  <div class="metric-grid" id="metrics"></div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="showTab('dashboard')"><i class="ti ti-layout-dashboard" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i> Dashboard</div>
+    <div class="tab" onclick="showTab('sheet')"><i class="ti ti-table" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i> Data Sheet</div>
+    <div class="tab" onclick="showTab('report')"><i class="ti ti-file-analytics" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i> Reports</div>
+    <div class="tab" onclick="showTab('add')"><i class="ti ti-circle-plus" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i> Add Entry</div>
+  </div>
+
+  <div id="tab-dashboard" class="tab-panel active">
+    <div class="charts-row">
+      <div class="chart-box">
+        <div class="section-title">Breakdown by complaint</div>
+        <div style="position:relative;height:200px;"><canvas id="chartComplaint" role="img" aria-label="Breakdown complaints distribution"></canvas></div>
+      </div>
+      <div class="chart-box">
+        <div class="section-title">Cost breakdown</div>
+        <div style="position:relative;height:200px;"><canvas id="chartCost" role="img" aria-label="Vehicle repair cost comparison"></canvas></div>
+      </div>
+    </div>
+    <div class="charts-row">
+      <div class="chart-box">
+        <div class="section-title">Status overview</div>
+        <div style="position:relative;height:180px;"><canvas id="chartStatus" role="img" aria-label="On road vs off road status"></canvas></div>
+      </div>
+      <div class="chart-box">
+        <div class="section-title">Towing required</div>
+        <div style="position:relative;height:180px;"><canvas id="chartTow" role="img" aria-label="Towing required yes no"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-sheet" class="tab-panel">
+    <div class="filters">
+      <label>Status</label>
+      <select id="f-status" onchange="renderTable()">
+        <option value="">All</option>
+        <option value="On Road">On Road</option>
+        <option value="Off Road">Off Road</option>
+      </select>
+      <label>Towing</label>
+      <select id="f-tow" onchange="renderTable()">
+        <option value="">All</option>
+        <option value="Yes">Yes</option>
+        <option value="No">No</option>
+      </select>
+      <label>Search</label>
+      <input type="text" id="f-search" placeholder="Reg no / pilot / workshop…" style="width:200px;" oninput="renderTable()">
+      <button class="btn" onclick="clearFilters()"><i class="ti ti-x" aria-hidden="true"></i> Clear</button>
+    </div>
+    <div class="section">
+      <div class="table-wrap" id="table-container"></div>
+      <div style="font-size:12px;color:var(--color-text-tertiary);margin-top:10px;" id="row-count"></div>
+    </div>
+  </div>
+
+  <div id="tab-report" class="tab-panel">
+    <div class="section">
+      <div class="section-title">Generate report</div>
+      <div class="report-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Date from</label>
+            <input type="date" id="r-from">
+          </div>
+          <div class="form-group">
+            <label>Date to</label>
+            <input type="date" id="r-to">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Status filter</label>
+            <select id="r-status">
+              <option value="">All statuses</option>
+              <option value="On Road">On Road</option>
+              <option value="Off Road">Off Road</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Cluster</label>
+            <select id="r-cluster">
+              <option value="">All clusters</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:4px;">
+          <button class="btn primary" onclick="generateReport()"><i class="ti ti-file-analytics" aria-hidden="true"></i> Generate Report</button>
+          <button class="btn" onclick="exportReport()"><i class="ti ti-download" aria-hidden="true"></i> Export Report CSV</button>
+        </div>
+      </div>
+      <div class="report-preview" id="report-output">Select filters above and click "Generate Report" to preview a summary.</div>
+    </div>
+  </div>
+
+  <div id="tab-add" class="tab-panel">
+    <div class="section">
+      <div class="section-title">Add new breakdown entry</div>
+      <div class="add-form" id="add-form">
+        <div class="add-row">
+          <div class="form-group"><label>Date *</label><input type="date" id="a-date"></div>
+          <div class="form-group"><label>Vehicle Reg No *</label><input type="text" id="a-reg" placeholder="MH14CL…"></div>
+          <div class="form-group"><label>Cluster No</label><input type="number" id="a-cluster"></div>
+        </div>
+        <div class="add-row">
+          <div class="form-group"><label>District</label><input type="text" id="a-dist" placeholder="Pune"></div>
+          <div class="form-group"><label>Make</label><input type="text" id="a-make"></div>
+          <div class="form-group"><label>Model</label><input type="text" id="a-model"></div>
+        </div>
+        <div class="add-row">
+          <div class="form-group"><label>Pilot Name</label><input type="text" id="a-pilot"></div>
+          <div class="form-group"><label>DM Name</label><input type="text" id="a-dm"></div>
+          <div class="form-group"><label>ADM Name</label><input type="text" id="a-adm"></div>
+        </div>
+        <div class="add-row">
+          <div class="form-group"><label>Odometer</label><input type="number" id="a-odo"></div>
+          <div class="form-group"><label>Breakdown Date *</label><input type="date" id="a-bdate"></div>
+          <div class="form-group"><label>Breakdown Time</label><input type="time" id="a-btime"></div>
+        </div>
+        <div class="add-row">
+          <div class="form-group"><label>Breakdown Complaint *</label><input type="text" id="a-complaint" placeholder="Describe issue…"></div>
+          <div class="form-group"><label>Action Taken</label><input type="text" id="a-action"></div>
+          <div class="form-group"><label>Towing Required</label><select id="a-tow"><option value="No">No</option><option value="Yes">Yes</option></select></div>
+        </div>
+        <div class="add-row">
+          <div class="form-group"><label>Towing Vendor</label><input type="text" id="a-tvendor"></div>
+          <div class="form-group"><label>Workshop Name</label><input type="text" id="a-workshop"></div>
+          <div class="form-group"><label>Status</label><select id="a-status"><option value="On Road">On Road</option><option value="Off Road">Off Road</option></select></div>
+        </div>
+        <div class="add-row">
+          <div class="form-group"><label>Repair Estimate (₹)</label><input type="number" id="a-estimate"></div>
+          <div class="form-group"><label>Advance Paid (₹)</label><input type="number" id="a-advance"></div>
+          <div class="form-group"><label>Supplementary Est. (₹)</label><input type="number" id="a-supp"></div>
+        </div>
+        <div class="add-row">
+          <div class="form-group"><label>Negotiated Amount (₹)</label><input type="number" id="a-nego"></div>
+          <div class="form-group"><label>Final Invoice (₹)</label><input type="number" id="a-invoice"></div>
+          <div class="form-group"><label>Off Road Days</label><input type="number" id="a-days"></div>
+        </div>
+        <div class="add-row">
+          <div class="form-group"><label>Remarks</label><input type="text" id="a-remarks"></div>
+          <div class="form-group" style="display:flex;align-items:flex-end;">
+            <button class="btn primary" style="width:100%;" onclick="addEntry()"><i class="ti ti-check" aria-hidden="true"></i> Save Entry</button>
+          </div>
+          <div></div>
+        </div>
+        <div id="add-msg" style="font-size:13px;color:#3B6D11;display:none;"><i class="ti ti-circle-check" aria-hidden="true"></i> Entry added successfully!</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+let data = [
+  {sr:1,date:"01-06-2026",reg:"MH14CL1051",cluster:"6",district:"Pune",make:"Ashok Leyland",model:"Dost",adm:"",dm:"",pilot:"",odo:120000,bdate:"01-06-2026",btime:"04:45",complaint:"Clutch plate problem",action:"",towing:"Yes",tvendor:"",workshop:"Shree Sai Motors",estimate:11210,advance:5000,supp:0,nego:10530,invoice:10530,paid:10530,savings:680,status:"On Road",days:1,adm2:"",remarks:""},
+  {sr:2,date:"02-06-2026",reg:"MH14CL0799",cluster:"1",district:"Pune",make:"",model:"",adm:"",dm:"",pilot:"Shubham Kadam",odo:95000,bdate:"02-06-2026",btime:"",complaint:"Electrical issue",action:"",towing:"No",tvendor:"",workshop:"Star Auto Electrical",estimate:1000,advance:0,supp:0,nego:1000,invoice:1000,paid:1000,savings:0,status:"On Road",days:1,adm2:"Shubham Kadam",remarks:""},
+  {sr:3,date:"02-06-2026",reg:"MH14CL1417",cluster:"3",district:"Pune",make:"",model:"",adm:"",dm:"",pilot:"Vijay Somavanshi",odo:87000,bdate:"02-06-2026",btime:"",complaint:"Headlamp issue",action:"",towing:"No",tvendor:"",workshop:"SM Battery & Auto",estimate:400,advance:0,supp:0,nego:400,invoice:400,paid:400,savings:0,status:"On Road",days:1,adm2:"Vijay Somavanshi",remarks:""}
+];
+
+let charts = {};
+
+function fmt(n){ return n ? '₹'+Number(n).toLocaleString('en-IN') : '—'; }
+function fmtN(n){ return n || 0; }
+
+function calcMetrics(){
+  const total = data.length;
+  const onRoad = data.filter(d=>d.status==='On Road').length;
+  const offRoad = data.filter(d=>d.status==='Off Road').length;
+  const totalPaid = data.reduce((s,d)=>s+fmtN(d.paid),0);
+  const totalSave = data.reduce((s,d)=>s+fmtN(d.savings),0);
+  const totalDays = data.reduce((s,d)=>s+fmtN(d.days),0);
+  document.getElementById('metrics').innerHTML = `
+    <div class="metric"><div class="lbl"><i class="ti ti-truck" aria-hidden="true"></i> Total vehicles</div><div class="val">${total}</div><div class="sub">breakdown entries</div></div>
+    <div class="metric"><div class="lbl"><i class="ti ti-circle-check" style="color:#3B6D11" aria-hidden="true"></i> On Road</div><div class="val" style="color:#3B6D11">${onRoad}</div><div class="sub">operational</div></div>
+    <div class="metric"><div class="lbl"><i class="ti ti-circle-x" style="color:#A32D2D" aria-hidden="true"></i> Off Road</div><div class="val" style="color:#A32D2D">${offRoad}</div><div class="sub">not operational</div></div>
+    <div class="metric"><div class="lbl"><i class="ti ti-receipt-rupee" aria-hidden="true"></i> Total paid</div><div class="val">₹${totalPaid.toLocaleString('en-IN')}</div><div class="sub">repair costs</div></div>
+    <div class="metric"><div class="lbl"><i class="ti ti-coin" style="color:#854F0B" aria-hidden="true"></i> Savings</div><div class="val" style="color:#3B6D11">₹${totalSave.toLocaleString('en-IN')}</div><div class="sub">via negotiation</div></div>
+    <div class="metric"><div class="lbl"><i class="ti ti-calendar-off" aria-hidden="true"></i> Off road days</div><div class="val">${totalDays}</div><div class="sub">cumulative</div></div>
+  `;
+}
+
+function renderTable(){
+  const fs = document.getElementById('f-status').value;
+  const ft = document.getElementById('f-tow').value;
+  const fq = document.getElementById('f-search').value.toLowerCase();
+  let rows = data.filter(d=>{
+    if(fs && d.status!==fs) return false;
+    if(ft && d.towing!==ft) return false;
+    if(fq && !JSON.stringify(d).toLowerCase().includes(fq)) return false;
+    return true;
+  });
+  document.getElementById('row-count').textContent = `Showing ${rows.length} of ${data.length} entries`;
+  if(!rows.length){ document.getElementById('table-container').innerHTML='<div class="empty">No entries match the current filters.</div>'; return; }
+  let html = `<table><thead><tr>
+    <th>Sr</th><th>Date</th><th>Reg No</th><th>Cluster</th><th>District</th><th>Make</th><th>Model</th><th>Pilot</th><th>Odo</th>
+    <th>B.Date</th><th>B.Time</th><th>Complaint</th><th>Towing</th><th>Workshop</th>
+    <th>Estimate</th><th>Advance</th><th>Negotiated</th><th>Final Invoice</th><th>Total Paid</th><th>Savings</th>
+    <th>Status</th><th>Days</th><th>Remarks</th>
+  </tr></thead><tbody>`;
+  rows.forEach(d=>{
+    html+=`<tr>
+      <td>${d.sr}</td><td>${d.date}</td><td style="font-weight:500">${d.reg}</td><td>${d.cluster}</td><td>${d.district}</td>
+      <td>${d.make||'—'}</td><td>${d.model||'—'}</td><td>${d.pilot||d.adm2||'—'}</td><td>${d.odo?d.odo.toLocaleString('en-IN'):'—'}</td>
+      <td>${d.bdate}</td><td>${d.btime||'—'}</td><td>${d.complaint}</td>
+      <td><span class="badge ${d.towing==='Yes'?'yes':'no'}">${d.towing}</span></td>
+      <td>${d.workshop||'—'}</td>
+      <td>${fmt(d.estimate)}</td><td>${fmt(d.advance)}</td><td>${fmt(d.nego)}</td><td>${fmt(d.invoice)}</td><td>${fmt(d.paid)}</td>
+      <td class="${d.savings>0?'savings-pos':'savings-zero'}">${fmt(d.savings)}</td>
+      <td><span class="badge ${d.status==='On Road'?'on-road':'off-road'}">${d.status}</span></td>
+      <td>${d.days}</td><td>${d.remarks||'—'}</td>
+    </tr>`;
+  });
+  html+='</tbody></table>';
+  document.getElementById('table-container').innerHTML=html;
+}
+
+function clearFilters(){
+  document.getElementById('f-status').value='';
+  document.getElementById('f-tow').value='';
+  document.getElementById('f-search').value='';
+  renderTable();
+}
+
+function renderCharts(){
+  const complaints = {};
+  data.forEach(d=>{ complaints[d.complaint]=(complaints[d.complaint]||0)+1; });
+  const cLabels=Object.keys(complaints), cVals=Object.values(complaints);
+  const cColors=['#185FA5','#3B6D11','#854F0B','#A32D2D','#533AB7'];
+
+  if(charts.complaint) charts.complaint.destroy();
+  charts.complaint = new Chart(document.getElementById('chartComplaint'),{
+    type:'bar',
+    data:{ labels:cLabels, datasets:[{label:'Count',data:cVals,backgroundColor:cColors.slice(0,cLabels.length)}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:11},autoSkip:false,maxRotation:30}},y:{ticks:{stepSize:1}}}}
+  });
+
+  const regs=data.map(d=>d.reg.slice(-4));
+  const paid=data.map(d=>fmtN(d.paid));
+  if(charts.cost) charts.cost.destroy();
+  charts.cost = new Chart(document.getElementById('chartCost'),{
+    type:'bar',
+    data:{labels:regs,datasets:[{label:'Total Paid',data:paid,backgroundColor:'#185FA5'},{label:'Savings',data:data.map(d=>fmtN(d.savings)),backgroundColor:'#3B6D11'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{font:{size:11}}}},scales:{y:{ticks:{callback:v=>'₹'+v}}}}
+  });
+
+  const onR=data.filter(d=>d.status==='On Road').length;
+  const offR=data.filter(d=>d.status==='Off Road').length;
+  if(charts.status) charts.status.destroy();
+  charts.status = new Chart(document.getElementById('chartStatus'),{
+    type:'doughnut',
+    data:{labels:['On Road','Off Road'],datasets:[{data:[onR,offR],backgroundColor:['#3B6D11','#A32D2D']}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11}}}}}
+  });
+
+  const towY=data.filter(d=>d.towing==='Yes').length;
+  const towN=data.filter(d=>d.towing==='No').length;
+  if(charts.tow) charts.tow.destroy();
+  charts.tow = new Chart(document.getElementById('chartTow'),{
+    type:'doughnut',
+    data:{labels:['Yes','No'],datasets:[{data:[towY,towN],backgroundColor:['#854F0B','#185FA5']}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11}}}}}
+  });
+}
+
+function populateClusterFilter(){
+  const clusters=[...new Set(data.map(d=>d.cluster).filter(Boolean))].sort();
+  const sel=document.getElementById('r-cluster');
+  sel.innerHTML='<option value="">All clusters</option>'+clusters.map(c=>`<option value="${c}">${c}</option>`).join('');
+}
+
+function generateReport(){
+  const from=document.getElementById('r-from').value;
+  const to=document.getElementById('r-to').value;
+  const rs=document.getElementById('r-status').value;
+  const rc=document.getElementById('r-cluster').value;
+  let rows=data.filter(d=>{
+    if(rs && d.status!==rs) return false;
+    if(rc && d.cluster!==rc) return false;
+    return true;
+  });
+  const totalPaid=rows.reduce((s,d)=>s+fmtN(d.paid),0);
+  const totalSave=rows.reduce((s,d)=>s+fmtN(d.savings),0);
+  const towY=rows.filter(d=>d.towing==='Yes').length;
+  const days=rows.reduce((s,d)=>s+fmtN(d.days),0);
+  const workshops=[...new Set(rows.map(d=>d.workshop).filter(Boolean))];
+  document.getElementById('report-output').innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;">
+      <div><div style="font-size:11px;color:var(--color-text-tertiary);">Total entries</div><div style="font-size:20px;font-weight:500;">${rows.length}</div></div>
+      <div><div style="font-size:11px;color:var(--color-text-tertiary);">Total paid</div><div style="font-size:20px;font-weight:500;">₹${totalPaid.toLocaleString('en-IN')}</div></div>
+      <div><div style="font-size:11px;color:var(--color-text-tertiary);">Savings</div><div style="font-size:20px;font-weight:500;color:#3B6D11">₹${totalSave.toLocaleString('en-IN')}</div></div>
+      <div><div style="font-size:11px;color:var(--color-text-tertiary);">Towing cases</div><div style="font-size:20px;font-weight:500;">${towY}</div></div>
+      <div><div style="font-size:11px;color:var(--color-text-tertiary);">Off road days</div><div style="font-size:20px;font-weight:500;">${days}</div></div>
+      <div><div style="font-size:11px;color:var(--color-text-tertiary);">Workshops used</div><div style="font-size:20px;font-weight:500;">${workshops.length}</div></div>
+    </div>
+    <div style="font-size:12px;color:var(--color-text-tertiary);">Workshops: ${workshops.join(', ')||'—'}</div>
+    <div style="font-size:12px;color:var(--color-text-tertiary);margin-top:4px;">Vehicles: ${rows.map(d=>d.reg).join(', ')||'—'}</div>
+  `;
+}
+
+let reportRows=[];
+function exportReport(){
+  const rs=document.getElementById('r-status').value;
+  const rc=document.getElementById('r-cluster').value;
+  let rows=data.filter(d=>{ if(rs&&d.status!==rs)return false; if(rc&&d.cluster!==rc)return false; return true; });
+  exportToCSV(rows, 'fleet_report.csv');
+}
+
+function exportCSV(){ exportToCSV(data, 'fleet_data.csv'); }
+
+function exportToCSV(rows, filename){
+  const headers=['Sr','Date','Reg No','Cluster','District','Make','Model','Pilot','Odometer','B.Date','B.Time','Complaint','Action','Towing','Workshop','Estimate','Advance','Supp','Negotiated','Invoice','Paid','Savings','Status','Days','Remarks'];
+  const csv=[headers.join(','),...rows.map(d=>[d.sr,d.date,d.reg,d.cluster,d.district,d.make,d.model,d.pilot||d.adm2,d.odo,d.bdate,d.btime,`"${d.complaint}"`,`"${d.action}"`,d.towing,`"${d.workshop}"`,d.estimate,d.advance,d.supp,d.nego,d.invoice,d.paid,d.savings,d.status,d.days,`"${d.remarks}"`].join(','))].join('\n');
+  const blob=new Blob([csv],{type:'text/csv'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename; a.click();
+}
+
+function addEntry(){
+  const reg=document.getElementById('a-reg').value.trim();
+  const dt=document.getElementById('a-date').value;
+  const complaint=document.getElementById('a-complaint').value.trim();
+  const bdate=document.getElementById('a-bdate').value;
+  if(!reg||!dt||!complaint||!bdate){ alert('Please fill required fields: Date, Vehicle Reg No, Breakdown Date, Complaint'); return; }
+  const nr={
+    sr:data.length+1, date:dt, reg:reg.toUpperCase(),
+    cluster:document.getElementById('a-cluster').value||'',
+    district:document.getElementById('a-dist').value||'',
+    make:document.getElementById('a-make').value||'',
+    model:document.getElementById('a-model').value||'',
+    adm:document.getElementById('a-adm').value||'', dm:document.getElementById('a-dm').value||'',
+    pilot:document.getElementById('a-pilot').value||'',
+    odo:Number(document.getElementById('a-odo').value)||0,
+    bdate:bdate, btime:document.getElementById('a-btime').value||'',
+    complaint:complaint, action:document.getElementById('a-action').value||'',
+    towing:document.getElementById('a-tow').value,
+    tvendor:document.getElementById('a-tvendor').value||'',
+    workshop:document.getElementById('a-workshop').value||'',
+    estimate:Number(document.getElementById('a-estimate').value)||0,
+    advance:Number(document.getElementById('a-advance').value)||0,
+    supp:Number(document.getElementById('a-supp').value)||0,
+    nego:Number(document.getElementById('a-nego').value)||0,
+    invoice:Number(document.getElementById('a-invoice').value)||0,
+    paid:Number(document.getElementById('a-invoice').value)||0,
+    savings:Math.max(0,(Number(document.getElementById('a-estimate').value)||0)-(Number(document.getElementById('a-nego').value)||0)),
+    status:document.getElementById('a-status').value,
+    days:Number(document.getElementById('a-days').value)||0,
+    adm2:'', remarks:document.getElementById('a-remarks').value||''
+  };
+  data.push(nr);
+  document.getElementById('add-msg').style.display='block';
+  setTimeout(()=>document.getElementById('add-msg').style.display='none',2500);
+  document.querySelectorAll('#add-form input, #add-form select').forEach(el=>{ if(el.tagName==='SELECT') el.selectedIndex=0; else el.value=''; });
+  calcMetrics(); renderCharts(); renderTable(); populateClusterFilter();
+}
+
+function showTab(name){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  document.querySelectorAll('.tab').forEach(t=>{ if(t.textContent.toLowerCase().includes(name)||t.getAttribute('onclick').includes(name)) t.classList.add('active'); });
+  if(name==='dashboard') setTimeout(renderCharts,50);
+}
+
+document.getElementById('last-updated').textContent='Updated: '+new Date().toLocaleDateString('en-IN');
+calcMetrics();
+populateClusterFilter();
+renderTable();
+setTimeout(renderCharts, 200);
+</script>
