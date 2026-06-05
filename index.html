@@ -1,432 +1,1595 @@
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>108 Fleet Management System — Sumeet Facilities</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: var(--font-sans); }
-.wrap { padding: 1rem 0; }
-.top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 12px; }
-.top-bar h1 { font-size: 18px; font-weight: 500; color: var(--color-text-primary); display: flex; align-items: center; gap: 8px; }
-.metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 1.5rem; }
-.metric { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 14px 16px; }
-.metric .lbl { font-size: 12px; color: var(--color-text-secondary); margin-bottom: 6px; }
-.metric .val { font-size: 22px; font-weight: 500; color: var(--color-text-primary); }
-.metric .sub { font-size: 11px; color: var(--color-text-tertiary); margin-top: 3px; }
-.section { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1rem 1.25rem; margin-bottom: 1rem; }
-.section-title { font-size: 13px; font-weight: 500; color: var(--color-text-secondary); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
-.filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1.5rem; align-items: center; }
-.filters select, .filters input { font-size: 13px; padding: 6px 10px; border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-secondary); background: var(--color-background-primary); color: var(--color-text-primary); height: 34px; }
-.filters label { font-size: 12px; color: var(--color-text-secondary); }
-.table-wrap { overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-th { font-size: 11px; font-weight: 500; color: var(--color-text-secondary); text-align: left; padding: 8px 10px; border-bottom: 0.5px solid var(--color-border-tertiary); white-space: nowrap; background: var(--color-background-secondary); }
-td { padding: 8px 10px; border-bottom: 0.5px solid var(--color-border-tertiary); color: var(--color-text-primary); white-space: nowrap; vertical-align: middle; }
-tr:last-child td { border-bottom: none; }
-tr:hover td { background: var(--color-background-secondary); }
-.badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 500; }
-.badge.on-road { background: #EAF3DE; color: #3B6D11; }
-.badge.off-road { background: #FCEBEB; color: #A32D2D; }
-.badge.yes { background: #FAEEDA; color: #854F0B; }
-.badge.no { background: var(--color-background-secondary); color: var(--color-text-secondary); }
-.btn { font-size: 13px; padding: 6px 14px; border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-secondary); background: var(--color-background-primary); color: var(--color-text-primary); cursor: pointer; display: inline-flex; align-items: center; gap: 5px; height: 34px; }
-.btn:hover { background: var(--color-background-secondary); }
-.btn.primary { background: #185FA5; color: #fff; border-color: #185FA5; }
-.btn.primary:hover { background: #0C447C; }
-.tabs { display: flex; gap: 4px; margin-bottom: 1.25rem; border-bottom: 0.5px solid var(--color-border-tertiary); padding-bottom: 0; }
-.tab { font-size: 13px; padding: 7px 14px; cursor: pointer; border-radius: var(--border-radius-md) var(--border-radius-md) 0 0; color: var(--color-text-secondary); border: 0.5px solid transparent; border-bottom: none; position: relative; bottom: -0.5px; }
-.tab.active { color: var(--color-text-primary); font-weight: 500; background: var(--color-background-primary); border-color: var(--color-border-tertiary); border-bottom-color: var(--color-background-primary); }
-.tab-panel { display: none; }
-.tab-panel.active { display: block; }
-.charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1rem; }
-.chart-box { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1rem 1.25rem; }
-.chart-box canvas { max-height: 200px; }
-.report-form { display: grid; gap: 12px; }
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.form-group label { font-size: 12px; color: var(--color-text-secondary); display: block; margin-bottom: 4px; }
-.form-group input, .form-group select { width: 100%; font-size: 13px; padding: 7px 10px; border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-secondary); background: var(--color-background-primary); color: var(--color-text-primary); }
-.report-preview { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 1rem; margin-top: 1rem; font-size: 13px; color: var(--color-text-secondary); min-height: 80px; }
-.add-form { display: grid; gap: 10px; }
-.add-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
-.add-form .form-group input, .add-form .form-group select { width: 100%; }
-.savings-pos { color: #3B6D11; font-weight: 500; }
-.savings-zero { color: var(--color-text-tertiary); }
-.empty { color: var(--color-text-tertiary); font-size: 13px; text-align: center; padding: 24px; }
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2330;
+    --border: #30363d;
+    --accent: #e63946;
+    --accent2: #2ecc71;
+    --accent3: #f0a500;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --blue: #1f6feb;
+    --danger: #da3633;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Barlow', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ─── LOGIN SCREEN ─── */
+  #login-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #0d1117 100%);
+    position: relative;
+    overflow: hidden;
+  }
+
+  #login-screen::before {
+    content: '108';
+    position: absolute;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 40vw;
+    font-weight: 800;
+    color: rgba(230,57,70,0.04);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    letter-spacing: -2vw;
+  }
+
+  .login-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--accent);
+    padding: 48px 40px;
+    width: 420px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .login-logo {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+
+  .login-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  .login-sub {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 36px;
+  }
+
+  .role-select {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+
+  .role-btn {
+    padding: 16px;
+    border: 2px solid var(--border);
+    background: var(--surface2);
+    color: var(--muted);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+
+  .role-btn:hover { border-color: var(--accent); color: var(--text); }
+  .role-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(230,57,70,0.08); }
+
+  .form-group { margin-bottom: 20px; }
+
+  .form-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  input[type="text"], input[type="password"], input[type="date"],
+  input[type="time"], input[type="number"], select, textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 14px;
+    font-family: 'Barlow', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  input:focus, select:focus, textarea:focus { border-color: var(--blue); }
+  select option { background: var(--surface2); }
+  textarea { resize: vertical; min-height: 80px; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 20px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+  }
+
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: #c1121f; }
+  .btn-success { background: var(--accent2); color: #0d1117; }
+  .btn-success:hover { background: #27ae60; }
+  .btn-warning { background: var(--accent3); color: #0d1117; }
+  .btn-warning:hover { background: #e09400; }
+  .btn-danger { background: var(--danger); color: white; }
+  .btn-danger:hover { background: #b91c1c; }
+  .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+  .btn-outline:hover { border-color: var(--text); color: var(--text); }
+  .btn-full { width: 100%; justify-content: center; }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+  .login-error {
+    background: rgba(218,54,51,0.15);
+    border: 1px solid var(--danger);
+    color: #ff6b6b;
+    padding: 10px 14px;
+    font-size: 13px;
+    margin-bottom: 16px;
+    display: none;
+  }
+
+  /* ─── MAIN APP ─── */
+  #app { display: none; }
+
+  .topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .topbar-brand {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .brand-badge {
+    background: var(--accent);
+    color: white;
+    font-size: 11px;
+    padding: 2px 8px;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .user-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .user-badge .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--accent2);
+  }
+
+  /* ─── NAV TABS ─── */
+  .nav-tabs {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex;
+    gap: 0;
+  }
+
+  .nav-tab {
+    padding: 12px 20px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+  }
+
+  .nav-tab:hover { color: var(--text); }
+  .nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* ─── STATS ROW ─── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .stat-card {
+    padding: 16px 20px;
+    border-right: 1px solid var(--border);
+  }
+
+  .stat-card:last-child { border-right: none; }
+
+  .stat-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .stat-value {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .stat-sub { font-size: 11px; color: var(--muted); }
+
+  .stat-green { color: var(--accent2); }
+  .stat-red { color: var(--accent); }
+  .stat-gold { color: var(--accent3); }
+
+  /* ─── PAGE CONTENT ─── */
+  .page { display: none; padding: 24px; }
+  .page.active { display: block; }
+
+  /* ─── DASHBOARD ─── */
+  .chart-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+
+  .chart-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 20px;
+  }
+
+  .chart-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+
+  /* ─── DATA TABLE ─── */
+  .table-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .search-box {
+    flex: 1;
+    min-width: 200px;
+    position: relative;
+  }
+
+  .search-box input {
+    padding-left: 36px;
+  }
+
+  .search-box::before {
+    content: '⌕';
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 18px;
+    z-index: 1;
+  }
+
+  .table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  th {
+    background: var(--surface2);
+    padding: 10px 14px;
+    text-align: left;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+
+  tr:hover td { background: rgba(255,255,255,0.03); }
+
+  .status-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .status-onroad { background: rgba(46,204,113,0.15); color: var(--accent2); }
+  .status-offroad { background: rgba(230,57,70,0.15); color: var(--accent); }
+
+  /* ─── ENTRY FORM ─── */
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+  }
+
+  .form-section-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 24px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    grid-column: 1 / -1;
+  }
+
+  .form-span2 { grid-column: span 2; }
+  .form-span3 { grid-column: span 3; }
+
+  /* ─── MODAL ─── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--accent);
+    width: 900px;
+    max-width: 95vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 32px;
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+
+  .modal-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: 1px;
+  }
+
+  .modal-close {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 24px;
+    cursor: pointer;
+    line-height: 1;
+    padding: 4px;
+  }
+
+  .modal-close:hover { color: var(--accent); }
+
+  /* ─── PILOT ENTRY ONLY ─── */
+  .pilot-wrapper {
+    min-height: calc(100vh - 56px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+  }
+
+  .pilot-form-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--accent2);
+    padding: 36px 32px;
+    width: 700px;
+    max-width: 100%;
+  }
+
+  .pilot-form-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+
+  .pilot-form-sub {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 28px;
+    letter-spacing: 1px;
+  }
+
+  /* ─── TOAST ─── */
+  .toast {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent2);
+    padding: 14px 20px;
+    font-size: 13px;
+    z-index: 999;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.3s;
+    pointer-events: none;
+  }
+
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.error { border-left-color: var(--accent); }
+
+  /* ─── LOADING ─── */
+  .loader {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,255,255,0.2);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(13,17,23,0.8);
+    z-index: 300;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .loading-overlay.active { display: flex; }
+  .loading-overlay .loader { width: 40px; height: 40px; border-width: 4px; }
+  .loading-overlay p { font-family: 'Barlow Condensed', sans-serif; font-size: 16px; letter-spacing: 2px; color: var(--muted); }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+
+  .empty-state h3 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+
+  .config-notice {
+    background: rgba(240,165,0,0.1);
+    border: 1px solid var(--accent3);
+    color: var(--accent3);
+    padding: 12px 16px;
+    font-size: 13px;
+    margin-bottom: 20px;
+    display: none;
+  }
+
+  /* ─── REPORTS ─── */
+  .report-filters {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 20px;
+    margin-bottom: 20px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr) auto;
+    gap: 16px;
+    align-items: end;
+  }
+
+  @media (max-width: 768px) {
+    .stats-row { grid-template-columns: repeat(3, 1fr); }
+    .chart-grid { grid-template-columns: 1fr; }
+    .form-grid { grid-template-columns: 1fr; }
+    .report-filters { grid-template-columns: 1fr 1fr; }
+    .login-card { width: 90%; padding: 32px 24px; }
+  }
 </style>
+</head>
+<body>
 
-<div class="wrap">
-  <div class="top-bar">
-    <h1><i class="ti ti-truck" aria-hidden="true" style="font-size:20px; color:#185FA5;"></i> Fleet Management System</h1>
-    <div style="display:flex;gap:8px;align-items:center;">
-      <span id="last-updated" style="font-size:12px;color:var(--color-text-tertiary);"></span>
-      <button class="btn" onclick="exportCSV()"><i class="ti ti-download" aria-hidden="true"></i> Export CSV</button>
-      <button class="btn primary" onclick="showTab('add')"><i class="ti ti-plus" aria-hidden="true"></i> Add Entry</button>
+<!-- ─── LOADING OVERLAY ─── -->
+<div class="loading-overlay" id="loading">
+  <div class="loader"></div>
+  <p>CONNECTING TO FLEET DATABASE...</p>
+</div>
+
+<!-- ─── TOAST ─── -->
+<div class="toast" id="toast"></div>
+
+<!-- ═══════════════════════════════════════════
+     LOGIN SCREEN
+════════════════════════════════════════════ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">Sumeet Facilities Ltd · Pune</div>
+    <div class="login-title">108 FLEET SYSTEM</div>
+    <div class="login-sub">Maharashtra Medical Emergency Services</div>
+
+    <div class="form-group">
+      <div class="form-label">Login As</div>
+      <div class="role-select">
+        <button class="role-btn active" id="role-pilot" onclick="selectRole('pilot')">🚑 Pilot</button>
+        <button class="role-btn" id="role-hq" onclick="selectRole('hq')">🏢 Fleet HQ</button>
+      </div>
+    </div>
+
+    <div id="hq-fields" style="display:none">
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input type="text" id="hq-user" placeholder="fleet_admin" autocomplete="off">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input type="password" id="login-pass" placeholder="••••••••">
+    </div>
+
+    <div class="login-error" id="login-error">Invalid credentials. Try again.</div>
+
+    <button class="btn btn-primary btn-full" onclick="doLogin()">
+      ENTER SYSTEM
+    </button>
+
+    <div style="margin-top:20px; padding:12px; background:var(--surface2); border:1px solid var(--border); font-size:11px; color:var(--muted); line-height:1.8;">
+      <strong style="color:var(--accent3)">DEMO CREDENTIALS:</strong><br>
+      Pilot PIN: <code style="color:var(--text)">pilot108</code><br>
+      HQ User: <code style="color:var(--text)">fleet_admin</code> &nbsp;|&nbsp; Pass: <code style="color:var(--text)">hq@sumeet</code>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     MAIN APP
+════════════════════════════════════════════ -->
+<div id="app">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-brand">
+      <span class="brand-badge">108</span>
+      FLEET MANAGEMENT SYSTEM
+    </div>
+    <div class="topbar-right">
+      <div class="user-badge">
+        <div class="dot"></div>
+        <span id="user-label">PILOT</span>
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="logout()">LOGOUT</button>
     </div>
   </div>
 
-  <div class="metric-grid" id="metrics"></div>
-
-  <div class="tabs">
-    <div class="tab active" onclick="showTab('dashboard')"><i class="ti ti-layout-dashboard" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i> Dashboard</div>
-    <div class="tab" onclick="showTab('sheet')"><i class="ti ti-table" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i> Data Sheet</div>
-    <div class="tab" onclick="showTab('report')"><i class="ti ti-file-analytics" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i> Reports</div>
-    <div class="tab" onclick="showTab('add')"><i class="ti ti-circle-plus" style="font-size:14px;vertical-align:-2px;margin-right:4px;" aria-hidden="true"></i> Add Entry</div>
+  <!-- CONFIG NOTICE -->
+  <div class="config-notice" id="config-notice" style="margin:0; border-radius:0; border-left:none; border-right:none; border-top:none;">
+    ⚠️ Google Sheet not configured. Set your Apps Script URL in the CONFIG section of the code. Showing demo data.
   </div>
 
-  <div id="tab-dashboard" class="tab-panel active">
-    <div class="charts-row">
-      <div class="chart-box">
-        <div class="section-title">Breakdown by complaint</div>
-        <div style="position:relative;height:200px;"><canvas id="chartComplaint" role="img" aria-label="Breakdown complaints distribution"></canvas></div>
-      </div>
-      <div class="chart-box">
-        <div class="section-title">Cost breakdown</div>
-        <div style="position:relative;height:200px;"><canvas id="chartCost" role="img" aria-label="Vehicle repair cost comparison"></canvas></div>
-      </div>
+  <!-- STATS ROW (HQ only) -->
+  <div class="stats-row" id="stats-row">
+    <div class="stat-card">
+      <div class="stat-label">Total Entries</div>
+      <div class="stat-value" id="stat-total">—</div>
+      <div class="stat-sub">breakdown records</div>
     </div>
-    <div class="charts-row">
+    <div class="stat-card">
+      <div class="stat-label">On Road</div>
+      <div class="stat-value stat-green" id="stat-onroad">—</div>
+      <div class="stat-sub">operational</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Off Road</div>
+      <div class="stat-value stat-red" id="stat-offroad">—</div>
+      <div class="stat-sub">not operational</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Paid</div>
+      <div class="stat-value" id="stat-paid">—</div>
+      <div class="stat-sub">repair costs</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Savings</div>
+      <div class="stat-value stat-gold" id="stat-savings">—</div>
+      <div class="stat-sub">via negotiation</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Off Road Days</div>
+      <div class="stat-value" id="stat-days">—</div>
+      <div class="stat-sub">cumulative</div>
+    </div>
+  </div>
+
+  <!-- NAV TABS (dynamic per role) -->
+  <div class="nav-tabs" id="nav-tabs">
+    <button class="nav-tab active" data-tab="dashboard" id="tab-dashboard" onclick="showTab('dashboard')">Dashboard</button>
+    <button class="nav-tab" data-tab="datasheet" id="tab-datasheet" onclick="showTab('datasheet')">Data Sheet</button>
+    <button class="nav-tab" data-tab="reports" id="tab-reports" onclick="showTab('reports')">Reports</button>
+    <button class="nav-tab" data-tab="addentry" id="tab-addentry" onclick="showTab('addentry')">Add Entry</button>
+  </div>
+
+  <!-- ─── DASHBOARD PAGE ─── -->
+  <div class="page active" id="page-dashboard">
+    <div class="chart-grid">
       <div class="chart-box">
-        <div class="section-title">Status overview</div>
-        <div style="position:relative;height:180px;"><canvas id="chartStatus" role="img" aria-label="On road vs off road status"></canvas></div>
+        <div class="chart-title">Breakdown by Complaint</div>
+        <canvas id="chart-complaint" height="200"></canvas>
       </div>
       <div class="chart-box">
-        <div class="section-title">Towing required</div>
-        <div style="position:relative;height:180px;"><canvas id="chartTow" role="img" aria-label="Towing required yes no"></canvas></div>
+        <div class="chart-title">Cost Breakdown by Vehicle</div>
+        <canvas id="chart-cost" height="200"></canvas>
+      </div>
+      <div class="chart-box">
+        <div class="chart-title">Status Overview</div>
+        <canvas id="chart-status" height="200"></canvas>
+      </div>
+      <div class="chart-box">
+        <div class="chart-title">Towing Required</div>
+        <canvas id="chart-towing" height="200"></canvas>
       </div>
     </div>
   </div>
 
-  <div id="tab-sheet" class="tab-panel">
-    <div class="filters">
-      <label>Status</label>
-      <select id="f-status" onchange="renderTable()">
-        <option value="">All</option>
+  <!-- ─── DATA SHEET PAGE ─── -->
+  <div class="page" id="page-datasheet">
+    <div class="table-toolbar">
+      <div class="search-box">
+        <input type="text" id="search-input" placeholder="Search by vehicle, complaint, pilot..." oninput="filterTable()">
+      </div>
+      <select id="filter-status" onchange="filterTable()" style="width:140px">
+        <option value="">All Status</option>
         <option value="On Road">On Road</option>
         <option value="Off Road">Off Road</option>
       </select>
-      <label>Towing</label>
-      <select id="f-tow" onchange="renderTable()">
-        <option value="">All</option>
-        <option value="Yes">Yes</option>
-        <option value="No">No</option>
+      <select id="filter-towing" onchange="filterTable()" style="width:140px">
+        <option value="">All Towing</option>
+        <option value="Yes">Towing Yes</option>
+        <option value="No">Towing No</option>
       </select>
-      <label>Search</label>
-      <input type="text" id="f-search" placeholder="Reg no / pilot / workshop…" style="width:200px;" oninput="renderTable()">
-      <button class="btn" onclick="clearFilters()"><i class="ti ti-x" aria-hidden="true"></i> Clear</button>
+      <button class="btn btn-outline btn-sm" onclick="exportCSV()">⬇ Export CSV</button>
+      <button class="btn btn-success btn-sm" onclick="loadData()">↻ Refresh</button>
     </div>
-    <div class="section">
-      <div class="table-wrap" id="table-container"></div>
-      <div style="font-size:12px;color:var(--color-text-tertiary);margin-top:10px;" id="row-count"></div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Date</th>
+            <th>Reg No</th>
+            <th>Cluster</th>
+            <th>District</th>
+            <th>Pilot</th>
+            <th>Breakdown Complaint</th>
+            <th>Status</th>
+            <th>Towing</th>
+            <th>Final Invoice (₹)</th>
+            <th>Off Road Days</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="data-tbody"></tbody>
+      </table>
     </div>
+    <div id="table-empty" class="empty-state" style="display:none">
+      <h3>No Records Found</h3>
+      <p>No entries match your search criteria.</p>
+    </div>
+    <div style="margin-top:12px; font-size:12px; color:var(--muted)" id="table-count"></div>
   </div>
 
-  <div id="tab-report" class="tab-panel">
-    <div class="section">
-      <div class="section-title">Generate report</div>
-      <div class="report-form">
-        <div class="form-row">
-          <div class="form-group">
-            <label>Date from</label>
-            <input type="date" id="r-from">
-          </div>
-          <div class="form-group">
-            <label>Date to</label>
-            <input type="date" id="r-to">
-          </div>
+  <!-- ─── REPORTS PAGE ─── -->
+  <div class="page" id="page-reports">
+    <div class="report-filters">
+      <div class="form-group" style="margin:0">
+        <label class="form-label">From Date</label>
+        <input type="date" id="rpt-from">
+      </div>
+      <div class="form-group" style="margin:0">
+        <label class="form-label">To Date</label>
+        <input type="date" id="rpt-to">
+      </div>
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Status</label>
+        <select id="rpt-status">
+          <option value="">All</option>
+          <option value="On Road">On Road</option>
+          <option value="Off Road">Off Road</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Cluster</label>
+        <select id="rpt-cluster">
+          <option value="">All Clusters</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" onclick="generateReport()">GENERATE</button>
+    </div>
+    <div id="report-output"></div>
+  </div>
+
+  <!-- ─── ADD ENTRY PAGE ─── -->
+  <div class="page" id="page-addentry">
+    <div style="max-width:900px; margin:0 auto">
+      <div class="pilot-form-title" style="margin-bottom:4px">ADD NEW BREAKDOWN ENTRY</div>
+      <div class="pilot-form-sub">All starred fields (*) are mandatory</div>
+
+      <div class="form-grid" id="entry-form-grid">
+        <div class="form-section-title">Vehicle & Location Details</div>
+
+        <div class="form-group">
+          <label class="form-label">Date *</label>
+          <input type="date" id="f-date" required>
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Status filter</label>
-            <select id="r-status">
-              <option value="">All statuses</option>
-              <option value="On Road">On Road</option>
-              <option value="Off Road">Off Road</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Cluster</label>
-            <select id="r-cluster">
-              <option value="">All clusters</option>
-            </select>
-          </div>
+        <div class="form-group">
+          <label class="form-label">Vehicle Reg No *</label>
+          <input type="text" id="f-regno" placeholder="MH14CL…" required>
         </div>
-        <div style="display:flex;gap:8px;margin-top:4px;">
-          <button class="btn primary" onclick="generateReport()"><i class="ti ti-file-analytics" aria-hidden="true"></i> Generate Report</button>
-          <button class="btn" onclick="exportReport()"><i class="ti ti-download" aria-hidden="true"></i> Export Report CSV</button>
+        <div class="form-group">
+          <label class="form-label">Cluster No</label>
+          <input type="text" id="f-cluster">
+        </div>
+        <div class="form-group">
+          <label class="form-label">District</label>
+          <input type="text" id="f-district" placeholder="Pune" value="Pune">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Make</label>
+          <input type="text" id="f-make">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Model</label>
+          <input type="text" id="f-model">
+        </div>
+
+        <div class="form-section-title">Personnel</div>
+
+        <div class="form-group">
+          <label class="form-label">Pilot Name</label>
+          <input type="text" id="f-pilot">
+        </div>
+        <div class="form-group">
+          <label class="form-label">DM Name</label>
+          <input type="text" id="f-dm">
+        </div>
+        <div class="form-group">
+          <label class="form-label">ADM Name</label>
+          <input type="text" id="f-adm">
+        </div>
+
+        <div class="form-section-title">Breakdown Details</div>
+
+        <div class="form-group">
+          <label class="form-label">Odometer</label>
+          <input type="number" id="f-odo" placeholder="km">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Breakdown Date *</label>
+          <input type="date" id="f-bddate" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Breakdown Time</label>
+          <input type="time" id="f-bdtime">
+        </div>
+        <div class="form-group form-span3">
+          <label class="form-label">Breakdown Complaint *</label>
+          <textarea id="f-complaint" placeholder="Describe the issue clearly…" required></textarea>
+        </div>
+        <div class="form-group form-span3">
+          <label class="form-label">Action Taken</label>
+          <textarea id="f-action" placeholder="Steps taken to resolve…"></textarea>
+        </div>
+
+        <div class="form-section-title">Workshop & Costs</div>
+
+        <div class="form-group">
+          <label class="form-label">Towing Required</label>
+          <select id="f-towing">
+            <option value="No">No</option>
+            <option value="Yes">Yes</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Towing Vendor</label>
+          <input type="text" id="f-towvendor">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Workshop Name</label>
+          <input type="text" id="f-workshop">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select id="f-status">
+            <option value="On Road">On Road</option>
+            <option value="Off Road">Off Road</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Repair Estimate (₹)</label>
+          <input type="number" id="f-estimate">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Advance Paid (₹)</label>
+          <input type="number" id="f-advance">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Supplementary Est. (₹)</label>
+          <input type="number" id="f-supp">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Negotiated Amount (₹)</label>
+          <input type="number" id="f-negotiated">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Final Invoice (₹)</label>
+          <input type="number" id="f-invoice">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Off Road Days</label>
+          <input type="number" id="f-offdays">
+        </div>
+        <div class="form-group form-span3">
+          <label class="form-label">Remarks</label>
+          <textarea id="f-remarks"></textarea>
+        </div>
+
+        <div class="form-span3" style="display:flex; gap:12px; margin-top:8px">
+          <button class="btn btn-success" style="padding:12px 32px; font-size:16px" onclick="saveEntry()">
+            ✓ SAVE ENTRY
+          </button>
+          <button class="btn btn-outline" onclick="clearForm()">CLEAR</button>
         </div>
       </div>
-      <div class="report-preview" id="report-output">Select filters above and click "Generate Report" to preview a summary.</div>
     </div>
   </div>
 
-  <div id="tab-add" class="tab-panel">
-    <div class="section">
-      <div class="section-title">Add new breakdown entry</div>
-      <div class="add-form" id="add-form">
-        <div class="add-row">
-          <div class="form-group"><label>Date *</label><input type="date" id="a-date"></div>
-          <div class="form-group"><label>Vehicle Reg No *</label><input type="text" id="a-reg" placeholder="MH14CL…"></div>
-          <div class="form-group"><label>Cluster No</label><input type="number" id="a-cluster"></div>
-        </div>
-        <div class="add-row">
-          <div class="form-group"><label>District</label><input type="text" id="a-dist" placeholder="Pune"></div>
-          <div class="form-group"><label>Make</label><input type="text" id="a-make"></div>
-          <div class="form-group"><label>Model</label><input type="text" id="a-model"></div>
-        </div>
-        <div class="add-row">
-          <div class="form-group"><label>Pilot Name</label><input type="text" id="a-pilot"></div>
-          <div class="form-group"><label>DM Name</label><input type="text" id="a-dm"></div>
-          <div class="form-group"><label>ADM Name</label><input type="text" id="a-adm"></div>
-        </div>
-        <div class="add-row">
-          <div class="form-group"><label>Odometer</label><input type="number" id="a-odo"></div>
-          <div class="form-group"><label>Breakdown Date *</label><input type="date" id="a-bdate"></div>
-          <div class="form-group"><label>Breakdown Time</label><input type="time" id="a-btime"></div>
-        </div>
-        <div class="add-row">
-          <div class="form-group"><label>Breakdown Complaint *</label><input type="text" id="a-complaint" placeholder="Describe issue…"></div>
-          <div class="form-group"><label>Action Taken</label><input type="text" id="a-action"></div>
-          <div class="form-group"><label>Towing Required</label><select id="a-tow"><option value="No">No</option><option value="Yes">Yes</option></select></div>
-        </div>
-        <div class="add-row">
-          <div class="form-group"><label>Towing Vendor</label><input type="text" id="a-tvendor"></div>
-          <div class="form-group"><label>Workshop Name</label><input type="text" id="a-workshop"></div>
-          <div class="form-group"><label>Status</label><select id="a-status"><option value="On Road">On Road</option><option value="Off Road">Off Road</option></select></div>
-        </div>
-        <div class="add-row">
-          <div class="form-group"><label>Repair Estimate (₹)</label><input type="number" id="a-estimate"></div>
-          <div class="form-group"><label>Advance Paid (₹)</label><input type="number" id="a-advance"></div>
-          <div class="form-group"><label>Supplementary Est. (₹)</label><input type="number" id="a-supp"></div>
-        </div>
-        <div class="add-row">
-          <div class="form-group"><label>Negotiated Amount (₹)</label><input type="number" id="a-nego"></div>
-          <div class="form-group"><label>Final Invoice (₹)</label><input type="number" id="a-invoice"></div>
-          <div class="form-group"><label>Off Road Days</label><input type="number" id="a-days"></div>
-        </div>
-        <div class="add-row">
-          <div class="form-group"><label>Remarks</label><input type="text" id="a-remarks"></div>
-          <div class="form-group" style="display:flex;align-items:flex-end;">
-            <button class="btn primary" style="width:100%;" onclick="addEntry()"><i class="ti ti-check" aria-hidden="true"></i> Save Entry</button>
-          </div>
-          <div></div>
-        </div>
-        <div id="add-msg" style="font-size:13px;color:#3B6D11;display:none;"><i class="ti ti-circle-check" aria-hidden="true"></i> Entry added successfully!</div>
+</div><!-- end #app -->
+
+<!-- ─── EDIT MODAL ─── -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">EDIT ENTRY</div>
+      <button class="modal-close" onclick="closeEditModal()">✕</button>
+    </div>
+    <div class="form-grid" id="edit-form-grid">
+      <!-- Same fields, prefixed e- -->
+      <div class="form-section-title">Vehicle & Location Details</div>
+      <div class="form-group"><label class="form-label">Date *</label><input type="date" id="e-date"></div>
+      <div class="form-group"><label class="form-label">Vehicle Reg No *</label><input type="text" id="e-regno"></div>
+      <div class="form-group"><label class="form-label">Cluster No</label><input type="text" id="e-cluster"></div>
+      <div class="form-group"><label class="form-label">District</label><input type="text" id="e-district"></div>
+      <div class="form-group"><label class="form-label">Make</label><input type="text" id="e-make"></div>
+      <div class="form-group"><label class="form-label">Model</label><input type="text" id="e-model"></div>
+
+      <div class="form-section-title">Personnel</div>
+      <div class="form-group"><label class="form-label">Pilot Name</label><input type="text" id="e-pilot"></div>
+      <div class="form-group"><label class="form-label">DM Name</label><input type="text" id="e-dm"></div>
+      <div class="form-group"><label class="form-label">ADM Name</label><input type="text" id="e-adm"></div>
+
+      <div class="form-section-title">Breakdown Details</div>
+      <div class="form-group"><label class="form-label">Odometer</label><input type="number" id="e-odo"></div>
+      <div class="form-group"><label class="form-label">Breakdown Date *</label><input type="date" id="e-bddate"></div>
+      <div class="form-group"><label class="form-label">Breakdown Time</label><input type="time" id="e-bdtime"></div>
+      <div class="form-group form-span3"><label class="form-label">Breakdown Complaint *</label><textarea id="e-complaint"></textarea></div>
+      <div class="form-group form-span3"><label class="form-label">Action Taken</label><textarea id="e-action"></textarea></div>
+
+      <div class="form-section-title">Workshop & Costs</div>
+      <div class="form-group"><label class="form-label">Towing Required</label><select id="e-towing"><option>No</option><option>Yes</option></select></div>
+      <div class="form-group"><label class="form-label">Towing Vendor</label><input type="text" id="e-towvendor"></div>
+      <div class="form-group"><label class="form-label">Workshop Name</label><input type="text" id="e-workshop"></div>
+      <div class="form-group"><label class="form-label">Status</label><select id="e-status"><option>On Road</option><option>Off Road</option></select></div>
+      <div class="form-group"><label class="form-label">Repair Estimate (₹)</label><input type="number" id="e-estimate"></div>
+      <div class="form-group"><label class="form-label">Advance Paid (₹)</label><input type="number" id="e-advance"></div>
+      <div class="form-group"><label class="form-label">Supplementary Est. (₹)</label><input type="number" id="e-supp"></div>
+      <div class="form-group"><label class="form-label">Negotiated Amount (₹)</label><input type="number" id="e-negotiated"></div>
+      <div class="form-group"><label class="form-label">Final Invoice (₹)</label><input type="number" id="e-invoice"></div>
+      <div class="form-group"><label class="form-label">Off Road Days</label><input type="number" id="e-offdays"></div>
+      <div class="form-group form-span3"><label class="form-label">Remarks</label><textarea id="e-remarks"></textarea></div>
+
+      <div class="form-span3" style="display:flex; gap:12px; margin-top:8px">
+        <button class="btn btn-warning" style="padding:12px 32px; font-size:16px" onclick="updateEntry()">UPDATE ENTRY</button>
+        <button class="btn btn-outline" onclick="closeEditModal()">CANCEL</button>
       </div>
     </div>
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
-let data = [
-  {sr:1,date:"01-06-2026",reg:"MH14CL1051",cluster:"6",district:"Pune",make:"Ashok Leyland",model:"Dost",adm:"",dm:"",pilot:"",odo:120000,bdate:"01-06-2026",btime:"04:45",complaint:"Clutch plate problem",action:"",towing:"Yes",tvendor:"",workshop:"Shree Sai Motors",estimate:11210,advance:5000,supp:0,nego:10530,invoice:10530,paid:10530,savings:680,status:"On Road",days:1,adm2:"",remarks:""},
-  {sr:2,date:"02-06-2026",reg:"MH14CL0799",cluster:"1",district:"Pune",make:"",model:"",adm:"",dm:"",pilot:"Shubham Kadam",odo:95000,bdate:"02-06-2026",btime:"",complaint:"Electrical issue",action:"",towing:"No",tvendor:"",workshop:"Star Auto Electrical",estimate:1000,advance:0,supp:0,nego:1000,invoice:1000,paid:1000,savings:0,status:"On Road",days:1,adm2:"Shubham Kadam",remarks:""},
-  {sr:3,date:"02-06-2026",reg:"MH14CL1417",cluster:"3",district:"Pune",make:"",model:"",adm:"",dm:"",pilot:"Vijay Somavanshi",odo:87000,bdate:"02-06-2026",btime:"",complaint:"Headlamp issue",action:"",towing:"No",tvendor:"",workshop:"SM Battery & Auto",estimate:400,advance:0,supp:0,nego:400,invoice:400,paid:400,savings:0,status:"On Road",days:1,adm2:"Vijay Somavanshi",remarks:""}
-];
+// ═══════════════════════════════════════════════════
+//   ⚙️  CONFIG — Set your Google Apps Script URL here
+// ═══════════════════════════════════════════════════
+https://script.google.com/macros/s/AKfycbyHlt7Ct1dTLDgSk7shY8XppQFGB18e1RmOb0BCE2akXRqmXuMCLcwdE3QzwvqnMIaV/exec
+// Replace with your deployed Apps Script URL after setup
+// Example: 'https://script.google.com/macros/s/AKfy.../exec'
 
+// ─── CREDENTIALS ───
+// Change these passwords before deploying!
+const CREDENTIALS = {
+  pilot: { password: 'pilot108', role: 'pilot' },
+  fleet_admin: { password: 'hq@sumeet', role: 'hq' }
+};
+
+// ─── STATE ───
+let currentRole = null;
+let allData = [];
+let filteredData = [];
+let editingRowId = null;
 let charts = {};
 
-function fmt(n){ return n ? '₹'+Number(n).toLocaleString('en-IN') : '—'; }
-function fmtN(n){ return n || 0; }
+// ─── DEMO DATA (shown when Apps Script URL not configured) ───
+const DEMO_DATA = [
+  { id:'ROW_2', date:'2026-05-01', regno:'MH14CL1051', cluster:'C1', district:'Pune', make:'Force Motors', model:'Traveller', pilot:'Ramesh Jadhav', dm:'Sunil Patil', adm:'Kiran More', odo:'48200', bddate:'2026-05-01', bdtime:'09:30', complaint:'Clutch plate problem — vehicle not engaging gear properly', action:'Replaced clutch plate at workshop', towing:'Yes', towvendor:'Shree Towing', workshop:'Balaji Motors', status:'On Road', estimate:'12000', advance:'5000', supp:'', negotiated:'10500', invoice:'10500', offdays:'1', remarks:'' },
+  { id:'ROW_3', date:'2026-05-10', regno:'MH14CL0799', cluster:'C2', district:'Pune', make:'Force Motors', model:'Traveller', pilot:'Vijay Shinde', dm:'Sunil Patil', adm:'Kiran More', odo:'52100', bddate:'2026-05-10', bdtime:'14:15', complaint:'Electrical issue — dashboard lights flickering, horn not working', action:'Rewired loose connections, replaced fuse', towing:'No', towvendor:'', workshop:'Spark Auto Electricals', status:'On Road', estimate:'1200', advance:'500', supp:'', negotiated:'1100', invoice:'1100', offdays:'1', remarks:'Minor issue resolved same day' },
+  { id:'ROW_4', date:'2026-05-20', regno:'MH14CL1417', cluster:'C1', district:'Pune', make:'Force Motors', model:'Traveller', pilot:'Anil Kulkarni', dm:'Manoj Desai', adm:'Kiran More', odo:'61800', bddate:'2026-05-20', bdtime:'11:00', complaint:'Headlamp issue — both headlamps not working', action:'Replaced headlamp bulbs and checked wiring', towing:'No', towvendor:'', workshop:'Balaji Motors', status:'On Road', estimate:'400', advance:'', supp:'', negotiated:'330', invoice:'330', offdays:'1', remarks:'' }
+];
 
-function calcMetrics(){
+// ─── HELPERS ───
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (type==='error' ? ' error' : '');
+  setTimeout(() => t.className = 'toast', 3000);
+}
+
+function showLoading(v) {
+  document.getElementById('loading').classList.toggle('active', v);
+}
+
+function isConfigured() {
+  return APPS_SCRIPT_URL && APPS_SCRIPT_URL !== 'YOUR_APPS_SCRIPT_URL_HERE';
+}
+
+// ─── LOGIN ───
+let selectedRole = 'pilot';
+
+function selectRole(r) {
+  selectedRole = r;
+  document.getElementById('role-pilot').classList.toggle('active', r==='pilot');
+  document.getElementById('role-hq').classList.toggle('active', r==='hq');
+  document.getElementById('hq-fields').style.display = r==='hq' ? 'block' : 'none';
+}
+
+function doLogin() {
+  const pass = document.getElementById('login-pass').value;
+  const errEl = document.getElementById('login-error');
+  errEl.style.display = 'none';
+
+  if (selectedRole === 'pilot') {
+    if (pass === CREDENTIALS.pilot.password) {
+      currentRole = 'pilot';
+      launchApp();
+    } else {
+      errEl.textContent = 'Wrong PIN. Contact Fleet HQ.';
+      errEl.style.display = 'block';
+    }
+  } else {
+    const user = document.getElementById('hq-user').value.trim();
+    if (CREDENTIALS[user] && CREDENTIALS[user].password === pass && CREDENTIALS[user].role === 'hq') {
+      currentRole = 'hq';
+      launchApp();
+    } else {
+      errEl.textContent = 'Invalid credentials. Access denied.';
+      errEl.style.display = 'block';
+    }
+  }
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.getElementById('login-screen').style.display !== 'none') doLogin();
+});
+
+function logout() {
+  currentRole = null;
+  allData = [];
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-pass').value = '';
+  document.getElementById('hq-user').value = '';
+}
+
+// ─── APP LAUNCH ───
+function launchApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('user-label').textContent = currentRole === 'hq' ? 'FLEET HQ' : 'PILOT';
+
+  if (!isConfigured()) {
+    document.getElementById('config-notice').style.display = 'block';
+  }
+
+  if (currentRole === 'pilot') {
+    // Pilot: only Add Entry tab visible
+    document.getElementById('stats-row').style.display = 'none';
+    document.getElementById('tab-dashboard').style.display = 'none';
+    document.getElementById('tab-datasheet').style.display = 'none';
+    document.getElementById('tab-reports').style.display = 'none';
+    showTab('addentry');
+    // Set today's date
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('f-date').value = today;
+    document.getElementById('f-bddate').value = today;
+  } else {
+    document.getElementById('stats-row').style.display = 'grid';
+    loadData();
+    showTab('dashboard');
+  }
+}
+
+// ─── TAB SWITCHING ───
+function showTab(tab) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + tab).classList.add('active');
+  const tabEl = document.getElementById('tab-' + tab);
+  if (tabEl) tabEl.classList.add('active');
+}
+
+// ─── LOAD DATA ───
+async function loadData() {
+  if (!isConfigured()) {
+    allData = DEMO_DATA;
+    renderTable(allData);
+    renderCharts(allData);
+    updateStats(allData);
+    populateClusterFilter(allData);
+    return;
+  }
+  showLoading(true);
+  try {
+    const res = await fetch(APPS_SCRIPT_URL + '?action=getAll');
+    const json = await res.json();
+    allData = json.data || [];
+    renderTable(allData);
+    renderCharts(allData);
+    updateStats(allData);
+    populateClusterFilter(allData);
+  } catch(e) {
+    showToast('Failed to load data. Check network.', 'error');
+    allData = DEMO_DATA;
+    renderTable(allData);
+    renderCharts(allData);
+    updateStats(allData);
+  }
+  showLoading(false);
+}
+
+// ─── STATS ───
+function updateStats(data) {
   const total = data.length;
+  const onRoad = data.filter(d => d.status === 'On Road').length;
+  const offRoad = data.filter(d => d.status === 'Off Road').length;
+  const totalPaid = data.reduce((s,d) => s + (parseFloat(d.invoice)||0), 0);
+  const totalNeg = data.reduce((s,d) => s + (parseFloat(d.negotiated)||0), 0);
+  const totalEst = data.reduce((s,d) => s + (parseFloat(d.estimate)||0), 0);
+  const savings = totalEst - totalPaid;
+  const offDays = data.reduce((s,d) => s + (parseInt(d.offdays)||0), 0);
+
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-onroad').textContent = onRoad;
+  document.getElementById('stat-offroad').textContent = offRoad;
+  document.getElementById('stat-paid').textContent = '₹' + totalPaid.toLocaleString('en-IN');
+  document.getElementById('stat-savings').textContent = '₹' + Math.max(0,savings).toLocaleString('en-IN');
+  document.getElementById('stat-days').textContent = offDays;
+}
+
+// ─── TABLE RENDER ───
+function renderTable(data) {
+  filteredData = data;
+  const tbody = document.getElementById('data-tbody');
+  const emptyEl = document.getElementById('table-empty');
+  const countEl = document.getElementById('table-count');
+
+  if (!data.length) {
+    tbody.innerHTML = '';
+    emptyEl.style.display = 'block';
+    countEl.textContent = '';
+    return;
+  }
+  emptyEl.style.display = 'none';
+  countEl.textContent = `Showing ${data.length} record${data.length!==1?'s':''}`;
+
+  tbody.innerHTML = data.map((row, i) => `
+    <tr>
+      <td style="color:var(--muted)">${i+1}</td>
+      <td>${row.date || '—'}</td>
+      <td><strong>${row.regno || '—'}</strong></td>
+      <td>${row.cluster || '—'}</td>
+      <td>${row.district || '—'}</td>
+      <td>${row.pilot || '—'}</td>
+      <td style="max-width:220px; white-space:normal; font-size:12px">${row.complaint || '—'}</td>
+      <td><span class="status-badge ${row.status==='On Road'?'status-onroad':'status-offroad'}">${row.status||'—'}</span></td>
+      <td>${row.towing || '—'}</td>
+      <td>${row.invoice ? '₹'+parseFloat(row.invoice).toLocaleString('en-IN') : '—'}</td>
+      <td>${row.offdays || '—'}</td>
+      <td>
+        <div style="display:flex; gap:6px">
+          <button class="btn btn-warning btn-sm" onclick="openEditModal('${row.id}')">✏ Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteEntry('${row.id}')">✕ Del</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+// ─── FILTER TABLE ───
+function filterTable() {
+  const q = document.getElementById('search-input').value.toLowerCase();
+  const st = document.getElementById('filter-status').value;
+  const tw = document.getElementById('filter-towing').value;
+
+  const filtered = allData.filter(row => {
+    const matchQ = !q || Object.values(row).some(v => String(v).toLowerCase().includes(q));
+    const matchSt = !st || row.status === st;
+    const matchTw = !tw || row.towing === tw;
+    return matchQ && matchSt && matchTw;
+  });
+  renderTable(filtered);
+}
+
+// ─── CHARTS ───
+function renderCharts(data) {
+  // Complaint frequency
+  const complaints = {};
+  data.forEach(d => {
+    const key = (d.complaint||'').split('—')[0].split('-')[0].trim().substring(0,30);
+    complaints[key] = (complaints[key]||0) + 1;
+  });
+  const topComplaints = Object.entries(complaints).sort((a,b)=>b[1]-a[1]).slice(0,6);
+
+  buildChart('chart-complaint', 'bar', topComplaints.map(x=>x[0]), [{
+    data: topComplaints.map(x=>x[1]),
+    backgroundColor: ['#e63946','#2ecc71','#f0a500','#1f6feb','#9b59b6','#1abc9c']
+  }], null, false);
+
+  // Cost by vehicle
+  const costs = {};
+  data.forEach(d => {
+    if (d.regno) costs[d.regno] = (costs[d.regno]||0) + (parseFloat(d.invoice)||0);
+  });
+  const topCosts = Object.entries(costs).sort((a,b)=>b[1]-a[1]).slice(0,6);
+
+  buildChart('chart-cost', 'bar', topCosts.map(x=>x[0]), [
+    { label:'Total Paid', data: topCosts.map(x=>x[1]), backgroundColor:'#1f6feb' }
+  ], '₹', true);
+
+  // Status donut
   const onRoad = data.filter(d=>d.status==='On Road').length;
   const offRoad = data.filter(d=>d.status==='Off Road').length;
-  const totalPaid = data.reduce((s,d)=>s+fmtN(d.paid),0);
-  const totalSave = data.reduce((s,d)=>s+fmtN(d.savings),0);
-  const totalDays = data.reduce((s,d)=>s+fmtN(d.days),0);
-  document.getElementById('metrics').innerHTML = `
-    <div class="metric"><div class="lbl"><i class="ti ti-truck" aria-hidden="true"></i> Total vehicles</div><div class="val">${total}</div><div class="sub">breakdown entries</div></div>
-    <div class="metric"><div class="lbl"><i class="ti ti-circle-check" style="color:#3B6D11" aria-hidden="true"></i> On Road</div><div class="val" style="color:#3B6D11">${onRoad}</div><div class="sub">operational</div></div>
-    <div class="metric"><div class="lbl"><i class="ti ti-circle-x" style="color:#A32D2D" aria-hidden="true"></i> Off Road</div><div class="val" style="color:#A32D2D">${offRoad}</div><div class="sub">not operational</div></div>
-    <div class="metric"><div class="lbl"><i class="ti ti-receipt-rupee" aria-hidden="true"></i> Total paid</div><div class="val">₹${totalPaid.toLocaleString('en-IN')}</div><div class="sub">repair costs</div></div>
-    <div class="metric"><div class="lbl"><i class="ti ti-coin" style="color:#854F0B" aria-hidden="true"></i> Savings</div><div class="val" style="color:#3B6D11">₹${totalSave.toLocaleString('en-IN')}</div><div class="sub">via negotiation</div></div>
-    <div class="metric"><div class="lbl"><i class="ti ti-calendar-off" aria-hidden="true"></i> Off road days</div><div class="val">${totalDays}</div><div class="sub">cumulative</div></div>
-  `;
+  buildChart('chart-status', 'doughnut', ['On Road','Off Road'], [{
+    data:[onRoad,offRoad],
+    backgroundColor:['#2ecc71','#e63946'],
+    borderWidth:0
+  }], null, false);
+
+  // Towing donut
+  const towYes = data.filter(d=>d.towing==='Yes').length;
+  const towNo = data.filter(d=>d.towing==='No').length;
+  buildChart('chart-towing', 'doughnut', ['Yes','No'], [{
+    data:[towYes,towNo],
+    backgroundColor:['#f0a500','#1f6feb'],
+    borderWidth:0
+  }], null, false);
 }
 
-function renderTable(){
-  const fs = document.getElementById('f-status').value;
-  const ft = document.getElementById('f-tow').value;
-  const fq = document.getElementById('f-search').value.toLowerCase();
-  let rows = data.filter(d=>{
-    if(fs && d.status!==fs) return false;
-    if(ft && d.towing!==ft) return false;
-    if(fq && !JSON.stringify(d).toLowerCase().includes(fq)) return false;
-    return true;
-  });
-  document.getElementById('row-count').textContent = `Showing ${rows.length} of ${data.length} entries`;
-  if(!rows.length){ document.getElementById('table-container').innerHTML='<div class="empty">No entries match the current filters.</div>'; return; }
-  let html = `<table><thead><tr>
-    <th>Sr</th><th>Date</th><th>Reg No</th><th>Cluster</th><th>District</th><th>Make</th><th>Model</th><th>Pilot</th><th>Odo</th>
-    <th>B.Date</th><th>B.Time</th><th>Complaint</th><th>Towing</th><th>Workshop</th>
-    <th>Estimate</th><th>Advance</th><th>Negotiated</th><th>Final Invoice</th><th>Total Paid</th><th>Savings</th>
-    <th>Status</th><th>Days</th><th>Remarks</th>
-  </tr></thead><tbody>`;
-  rows.forEach(d=>{
-    html+=`<tr>
-      <td>${d.sr}</td><td>${d.date}</td><td style="font-weight:500">${d.reg}</td><td>${d.cluster}</td><td>${d.district}</td>
-      <td>${d.make||'—'}</td><td>${d.model||'—'}</td><td>${d.pilot||d.adm2||'—'}</td><td>${d.odo?d.odo.toLocaleString('en-IN'):'—'}</td>
-      <td>${d.bdate}</td><td>${d.btime||'—'}</td><td>${d.complaint}</td>
-      <td><span class="badge ${d.towing==='Yes'?'yes':'no'}">${d.towing}</span></td>
-      <td>${d.workshop||'—'}</td>
-      <td>${fmt(d.estimate)}</td><td>${fmt(d.advance)}</td><td>${fmt(d.nego)}</td><td>${fmt(d.invoice)}</td><td>${fmt(d.paid)}</td>
-      <td class="${d.savings>0?'savings-pos':'savings-zero'}">${fmt(d.savings)}</td>
-      <td><span class="badge ${d.status==='On Road'?'on-road':'off-road'}">${d.status}</span></td>
-      <td>${d.days}</td><td>${d.remarks||'—'}</td>
-    </tr>`;
-  });
-  html+='</tbody></table>';
-  document.getElementById('table-container').innerHTML=html;
-}
-
-function clearFilters(){
-  document.getElementById('f-status').value='';
-  document.getElementById('f-tow').value='';
-  document.getElementById('f-search').value='';
-  renderTable();
-}
-
-function renderCharts(){
-  const complaints = {};
-  data.forEach(d=>{ complaints[d.complaint]=(complaints[d.complaint]||0)+1; });
-  const cLabels=Object.keys(complaints), cVals=Object.values(complaints);
-  const cColors=['#185FA5','#3B6D11','#854F0B','#A32D2D','#533AB7'];
-
-  if(charts.complaint) charts.complaint.destroy();
-  charts.complaint = new Chart(document.getElementById('chartComplaint'),{
-    type:'bar',
-    data:{ labels:cLabels, datasets:[{label:'Count',data:cVals,backgroundColor:cColors.slice(0,cLabels.length)}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:11},autoSkip:false,maxRotation:30}},y:{ticks:{stepSize:1}}}}
-  });
-
-  const regs=data.map(d=>d.reg.slice(-4));
-  const paid=data.map(d=>fmtN(d.paid));
-  if(charts.cost) charts.cost.destroy();
-  charts.cost = new Chart(document.getElementById('chartCost'),{
-    type:'bar',
-    data:{labels:regs,datasets:[{label:'Total Paid',data:paid,backgroundColor:'#185FA5'},{label:'Savings',data:data.map(d=>fmtN(d.savings)),backgroundColor:'#3B6D11'}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{font:{size:11}}}},scales:{y:{ticks:{callback:v=>'₹'+v}}}}
-  });
-
-  const onR=data.filter(d=>d.status==='On Road').length;
-  const offR=data.filter(d=>d.status==='Off Road').length;
-  if(charts.status) charts.status.destroy();
-  charts.status = new Chart(document.getElementById('chartStatus'),{
-    type:'doughnut',
-    data:{labels:['On Road','Off Road'],datasets:[{data:[onR,offR],backgroundColor:['#3B6D11','#A32D2D']}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11}}}}}
-  });
-
-  const towY=data.filter(d=>d.towing==='Yes').length;
-  const towN=data.filter(d=>d.towing==='No').length;
-  if(charts.tow) charts.tow.destroy();
-  charts.tow = new Chart(document.getElementById('chartTow'),{
-    type:'doughnut',
-    data:{labels:['Yes','No'],datasets:[{data:[towY,towN],backgroundColor:['#854F0B','#185FA5']}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11}}}}}
+function buildChart(id, type, labels, datasets, yPrefix, showLegend) {
+  if (charts[id]) charts[id].destroy();
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  charts[id] = new Chart(ctx, {
+    type,
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: showLegend, labels: { color:'#8b949e', font:{family:'Barlow',size:11} } },
+        tooltip: {
+          callbacks: { label: ctx => yPrefix ? yPrefix + ctx.raw.toLocaleString('en-IN') : ctx.raw }
+        }
+      },
+      scales: type !== 'doughnut' ? {
+        x: { ticks: { color:'#8b949e', font:{size:10} }, grid: { color:'rgba(255,255,255,0.05)' } },
+        y: { ticks: { color:'#8b949e', callback: v => yPrefix ? yPrefix+v.toLocaleString('en-IN') : v }, grid: { color:'rgba(255,255,255,0.05)' } }
+      } : {}
+    }
   });
 }
 
-function populateClusterFilter(){
-  const clusters=[...new Set(data.map(d=>d.cluster).filter(Boolean))].sort();
-  const sel=document.getElementById('r-cluster');
-  sel.innerHTML='<option value="">All clusters</option>'+clusters.map(c=>`<option value="${c}">${c}</option>`).join('');
+// ─── CLUSTER FILTER ───
+function populateClusterFilter(data) {
+  const clusters = [...new Set(data.map(d=>d.cluster).filter(Boolean))];
+  const sel = document.getElementById('rpt-cluster');
+  sel.innerHTML = '<option value="">All Clusters</option>' + clusters.map(c=>`<option value="${c}">${c}</option>`).join('');
 }
 
-function generateReport(){
-  const from=document.getElementById('r-from').value;
-  const to=document.getElementById('r-to').value;
-  const rs=document.getElementById('r-status').value;
-  const rc=document.getElementById('r-cluster').value;
-  let rows=data.filter(d=>{
-    if(rs && d.status!==rs) return false;
-    if(rc && d.cluster!==rc) return false;
-    return true;
-  });
-  const totalPaid=rows.reduce((s,d)=>s+fmtN(d.paid),0);
-  const totalSave=rows.reduce((s,d)=>s+fmtN(d.savings),0);
-  const towY=rows.filter(d=>d.towing==='Yes').length;
-  const days=rows.reduce((s,d)=>s+fmtN(d.days),0);
-  const workshops=[...new Set(rows.map(d=>d.workshop).filter(Boolean))];
-  document.getElementById('report-output').innerHTML=`
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;">
-      <div><div style="font-size:11px;color:var(--color-text-tertiary);">Total entries</div><div style="font-size:20px;font-weight:500;">${rows.length}</div></div>
-      <div><div style="font-size:11px;color:var(--color-text-tertiary);">Total paid</div><div style="font-size:20px;font-weight:500;">₹${totalPaid.toLocaleString('en-IN')}</div></div>
-      <div><div style="font-size:11px;color:var(--color-text-tertiary);">Savings</div><div style="font-size:20px;font-weight:500;color:#3B6D11">₹${totalSave.toLocaleString('en-IN')}</div></div>
-      <div><div style="font-size:11px;color:var(--color-text-tertiary);">Towing cases</div><div style="font-size:20px;font-weight:500;">${towY}</div></div>
-      <div><div style="font-size:11px;color:var(--color-text-tertiary);">Off road days</div><div style="font-size:20px;font-weight:500;">${days}</div></div>
-      <div><div style="font-size:11px;color:var(--color-text-tertiary);">Workshops used</div><div style="font-size:20px;font-weight:500;">${workshops.length}</div></div>
-    </div>
-    <div style="font-size:12px;color:var(--color-text-tertiary);">Workshops: ${workshops.join(', ')||'—'}</div>
-    <div style="font-size:12px;color:var(--color-text-tertiary);margin-top:4px;">Vehicles: ${rows.map(d=>d.reg).join(', ')||'—'}</div>
-  `;
+// ─── SAVE ENTRY ───
+async function saveEntry() {
+  const required = ['f-date','f-regno','f-bddate','f-complaint'];
+  for (const id of required) {
+    if (!document.getElementById(id).value.trim()) {
+      showToast('Fill all required fields (*)', 'error');
+      document.getElementById(id).focus();
+      return;
+    }
+  }
+
+  const entry = buildEntryFromForm('f-');
+
+  if (!isConfigured()) {
+    // Demo mode: just add locally
+    entry.id = 'ROW_' + (allData.length + 2);
+    allData.push(entry);
+    clearForm();
+    showToast('Entry saved! (Demo mode — not sent to Google Sheet)');
+    if (currentRole === 'hq') { renderTable(allData); renderCharts(allData); updateStats(allData); }
+    return;
+  }
+
+  showLoading(true);
+  try {
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'addRow', data: entry })
+    });
+    const json = await res.json();
+    if (json.success) {
+      showToast('Entry saved successfully to Google Sheet ✓');
+      clearForm();
+      if (currentRole === 'hq') await loadData();
+    } else {
+      showToast('Save failed: ' + (json.error||'Unknown error'), 'error');
+    }
+  } catch(e) {
+    showToast('Network error. Check connection.', 'error');
+  }
+  showLoading(false);
 }
 
-let reportRows=[];
-function exportReport(){
-  const rs=document.getElementById('r-status').value;
-  const rc=document.getElementById('r-cluster').value;
-  let rows=data.filter(d=>{ if(rs&&d.status!==rs)return false; if(rc&&d.cluster!==rc)return false; return true; });
-  exportToCSV(rows, 'fleet_report.csv');
-}
-
-function exportCSV(){ exportToCSV(data, 'fleet_data.csv'); }
-
-function exportToCSV(rows, filename){
-  const headers=['Sr','Date','Reg No','Cluster','District','Make','Model','Pilot','Odometer','B.Date','B.Time','Complaint','Action','Towing','Workshop','Estimate','Advance','Supp','Negotiated','Invoice','Paid','Savings','Status','Days','Remarks'];
-  const csv=[headers.join(','),...rows.map(d=>[d.sr,d.date,d.reg,d.cluster,d.district,d.make,d.model,d.pilot||d.adm2,d.odo,d.bdate,d.btime,`"${d.complaint}"`,`"${d.action}"`,d.towing,`"${d.workshop}"`,d.estimate,d.advance,d.supp,d.nego,d.invoice,d.paid,d.savings,d.status,d.days,`"${d.remarks}"`].join(','))].join('\n');
-  const blob=new Blob([csv],{type:'text/csv'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename; a.click();
-}
-
-function addEntry(){
-  const reg=document.getElementById('a-reg').value.trim();
-  const dt=document.getElementById('a-date').value;
-  const complaint=document.getElementById('a-complaint').value.trim();
-  const bdate=document.getElementById('a-bdate').value;
-  if(!reg||!dt||!complaint||!bdate){ alert('Please fill required fields: Date, Vehicle Reg No, Breakdown Date, Complaint'); return; }
-  const nr={
-    sr:data.length+1, date:dt, reg:reg.toUpperCase(),
-    cluster:document.getElementById('a-cluster').value||'',
-    district:document.getElementById('a-dist').value||'',
-    make:document.getElementById('a-make').value||'',
-    model:document.getElementById('a-model').value||'',
-    adm:document.getElementById('a-adm').value||'', dm:document.getElementById('a-dm').value||'',
-    pilot:document.getElementById('a-pilot').value||'',
-    odo:Number(document.getElementById('a-odo').value)||0,
-    bdate:bdate, btime:document.getElementById('a-btime').value||'',
-    complaint:complaint, action:document.getElementById('a-action').value||'',
-    towing:document.getElementById('a-tow').value,
-    tvendor:document.getElementById('a-tvendor').value||'',
-    workshop:document.getElementById('a-workshop').value||'',
-    estimate:Number(document.getElementById('a-estimate').value)||0,
-    advance:Number(document.getElementById('a-advance').value)||0,
-    supp:Number(document.getElementById('a-supp').value)||0,
-    nego:Number(document.getElementById('a-nego').value)||0,
-    invoice:Number(document.getElementById('a-invoice').value)||0,
-    paid:Number(document.getElementById('a-invoice').value)||0,
-    savings:Math.max(0,(Number(document.getElementById('a-estimate').value)||0)-(Number(document.getElementById('a-nego').value)||0)),
-    status:document.getElementById('a-status').value,
-    days:Number(document.getElementById('a-days').value)||0,
-    adm2:'', remarks:document.getElementById('a-remarks').value||''
+function buildEntryFromForm(pfx) {
+  const g = id => document.getElementById(pfx+id)?.value || '';
+  return {
+    date: g('date'), regno: g('regno'), cluster: g('cluster'), district: g('district'),
+    make: g('make'), model: g('model'), pilot: g('pilot'), dm: g('dm'), adm: g('adm'),
+    odo: g('odo'), bddate: g('bddate'), bdtime: g('bdtime'), complaint: g('complaint'),
+    action: g('action'), towing: g('towing'), towvendor: g('towvendor'), workshop: g('workshop'),
+    status: g('status'), estimate: g('estimate'), advance: g('advance'), supp: g('supp'),
+    negotiated: g('negotiated'), invoice: g('invoice'), offdays: g('offdays'), remarks: g('remarks')
   };
-  data.push(nr);
-  document.getElementById('add-msg').style.display='block';
-  setTimeout(()=>document.getElementById('add-msg').style.display='none',2500);
-  document.querySelectorAll('#add-form input, #add-form select').forEach(el=>{ if(el.tagName==='SELECT') el.selectedIndex=0; else el.value=''; });
-  calcMetrics(); renderCharts(); renderTable(); populateClusterFilter();
 }
 
-function showTab(name){
-  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  document.getElementById('tab-'+name).classList.add('active');
-  document.querySelectorAll('.tab').forEach(t=>{ if(t.textContent.toLowerCase().includes(name)||t.getAttribute('onclick').includes(name)) t.classList.add('active'); });
-  if(name==='dashboard') setTimeout(renderCharts,50);
+function clearForm() {
+  const ids = ['date','regno','cluster','district','make','model','pilot','dm','adm','odo','bddate','bdtime','complaint','action','towvendor','workshop','estimate','advance','supp','negotiated','invoice','offdays','remarks'];
+  ids.forEach(id => { const el = document.getElementById('f-'+id); if (el) el.value = ''; });
+  document.getElementById('f-towing').value = 'No';
+  document.getElementById('f-status').value = 'On Road';
+  document.getElementById('f-district').value = 'Pune';
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('f-date').value = today;
+  document.getElementById('f-bddate').value = today;
 }
 
-document.getElementById('last-updated').textContent='Updated: '+new Date().toLocaleDateString('en-IN');
-calcMetrics();
-populateClusterFilter();
-renderTable();
-setTimeout(renderCharts, 200);
+// ─── EDIT MODAL ───
+function openEditModal(id) {
+  const row = allData.find(d => d.id === id);
+  if (!row) return;
+  editingRowId = id;
+
+  const fields = ['date','regno','cluster','district','make','model','pilot','dm','adm','odo','bddate','bdtime','complaint','action','towing','towvendor','workshop','status','estimate','advance','supp','negotiated','invoice','offdays','remarks'];
+  fields.forEach(f => {
+    const el = document.getElementById('e-'+f);
+    if (el) el.value = row[f] || '';
+  });
+
+  document.getElementById('edit-modal').classList.add('open');
+}
+
+function closeEditModal() {
+  document.getElementById('edit-modal').classList.remove('open');
+  editingRowId = null;
+}
+
+async function updateEntry() {
+  const entry = buildEntryFromForm('e-');
+  entry.id = editingRowId;
+
+  if (!isConfigured()) {
+    const idx = allData.findIndex(d => d.id === editingRowId);
+    if (idx > -1) allData[idx] = { ...allData[idx], ...entry };
+    closeEditModal();
+    renderTable(allData);
+    renderCharts(allData);
+    updateStats(allData);
+    showToast('Entry updated! (Demo mode)');
+    return;
+  }
+
+  showLoading(true);
+  try {
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'updateRow', data: entry })
+    });
+    const json = await res.json();
+    if (json.success) {
+      showToast('Entry updated successfully ✓');
+      closeEditModal();
+      await loadData();
+    } else {
+      showToast('Update failed: ' + (json.error||''), 'error');
+    }
+  } catch(e) {
+    showToast('Network error', 'error');
+  }
+  showLoading(false);
+}
+
+// ─── DELETE ───
+async function deleteEntry(id) {
+  if (!confirm('Are you sure you want to DELETE this entry? This cannot be undone.')) return;
+
+  if (!isConfigured()) {
+    allData = allData.filter(d => d.id !== id);
+    renderTable(allData);
+    renderCharts(allData);
+    updateStats(allData);
+    showToast('Entry deleted (Demo mode)');
+    return;
+  }
+
+  showLoading(true);
+  try {
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'deleteRow', id })
+    });
+    const json = await res.json();
+    if (json.success) {
+      showToast('Entry deleted ✓');
+      await loadData();
+    } else {
+      showToast('Delete failed: ' + (json.error||''), 'error');
+    }
+  } catch(e) {
+    showToast('Network error', 'error');
+  }
+  showLoading(false);
+}
+
+// ─── REPORTS ───
+function generateReport() {
+  const from = document.getElementById('rpt-from').value;
+  const to = document.getElementById('rpt-to').value;
+  const st = document.getElementById('rpt-status').value;
+  const cl = document.getElementById('rpt-cluster').value;
+
+  let data = [...allData];
+  if (from) data = data.filter(d => d.date >= from);
+  if (to) data = data.filter(d => d.date <= to);
+  if (st) data = data.filter(d => d.status === st);
+  if (cl) data = data.filter(d => d.cluster === cl);
+
+  const totalPaid = data.reduce((s,d)=>s+(parseFloat(d.invoice)||0),0);
+  const totalEst = data.reduce((s,d)=>s+(parseFloat(d.estimate)||0),0);
+  const offDays = data.reduce((s,d)=>s+(parseInt(d.offdays)||0),0);
+  const onRoad = data.filter(d=>d.status==='On Road').length;
+  const offRoad = data.filter(d=>d.status==='Off Road').length;
+
+  document.getElementById('report-output').innerHTML = `
+    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:20px">
+      <div class="stat-card" style="background:var(--surface); border:1px solid var(--border)">
+        <div class="stat-label">Records</div>
+        <div class="stat-value">${data.length}</div>
+      </div>
+      <div class="stat-card" style="background:var(--surface); border:1px solid var(--border)">
+        <div class="stat-label">Total Paid</div>
+        <div class="stat-value">₹${totalPaid.toLocaleString('en-IN')}</div>
+      </div>
+      <div class="stat-card" style="background:var(--surface); border:1px solid var(--border)">
+        <div class="stat-label">Savings</div>
+        <div class="stat-value stat-gold">₹${Math.max(0,totalEst-totalPaid).toLocaleString('en-IN')}</div>
+      </div>
+      <div class="stat-card" style="background:var(--surface); border:1px solid var(--border)">
+        <div class="stat-label">Off Road Days</div>
+        <div class="stat-value stat-red">${offDays}</div>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>Date</th><th>Reg No</th><th>Cluster</th><th>Pilot</th><th>Complaint</th><th>Status</th><th>Invoice (₹)</th><th>Off Road Days</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${data.map((r,i) => `<tr>
+            <td style="color:var(--muted)">${i+1}</td>
+            <td>${r.date||'—'}</td>
+            <td><strong>${r.regno||'—'}</strong></td>
+            <td>${r.cluster||'—'}</td>
+            <td>${r.pilot||'—'}</td>
+            <td style="font-size:12px">${r.complaint||'—'}</td>
+            <td><span class="status-badge ${r.status==='On Road'?'status-onroad':'status-offroad'}">${r.status||'—'}</span></td>
+            <td>${r.invoice?'₹'+parseFloat(r.invoice).toLocaleString('en-IN'):'—'}</td>
+            <td>${r.offdays||'—'}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+    <div style="margin-top:16px; display:flex; gap:12px">
+      <button class="btn btn-outline btn-sm" onclick="exportReportCSV()">⬇ Export Report CSV</button>
+    </div>
+  `;
+  window._reportData = data;
+}
+
+function exportReportCSV() {
+  if (!window._reportData) return;
+  exportDataAsCSV(window._reportData, 'fleet_report');
+}
+
+// ─── CSV EXPORT ───
+function exportCSV() { exportDataAsCSV(filteredData, 'fleet_data'); }
+
+function exportDataAsCSV(data, filename) {
+  const headers = ['Date','Reg No','Cluster','District','Make','Model','Pilot','DM','ADM','Odometer','BD Date','BD Time','Complaint','Action Taken','Towing','Towing Vendor','Workshop','Status','Estimate','Advance','Supplementary','Negotiated','Invoice','Off Road Days','Remarks'];
+  const keys = ['date','regno','cluster','district','make','model','pilot','dm','adm','odo','bddate','bdtime','complaint','action','towing','towvendor','workshop','status','estimate','advance','supp','negotiated','invoice','offdays','remarks'];
+  const csv = [headers.join(','), ...data.map(r => keys.map(k => `"${(r[k]||'').replace(/"/g,'""')}"`).join(','))].join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = filename + '_' + new Date().toISOString().split('T')[0] + '.csv';
+  a.click();
+}
+
+// Close modal on overlay click
+document.getElementById('edit-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeEditModal();
+});
 </script>
+
+<!-- ═══════════════════════════════════════════════════
+     GOOGLE APPS SCRIPT SETUP GUIDE
+     (shown in page source for developer reference)
+════════════════════════════════════════════════════
+
+STEP 1: Create Google Sheet with these column headers in Row 1:
+ID | Date | Reg No | Cluster | District | Make | Model | Pilot | DM | ADM | Odometer | BD Date | BD Time | Complaint | Action | Towing | Tow Vendor | Workshop | Status | Estimate | Advance | Supplementary | Negotiated | Invoice | Off Road Days | Remarks
+
+STEP 2: Open Google Sheet → Extensions → Apps Script → paste Code.gs (see apps_script.gs file)
+
+STEP 3: Deploy as Web App → Execute as: Me → Who has access: Anyone → Copy URL
+
+STEP 4: Replace 'YOUR_APPS_SCRIPT_URL_HERE' in the CONFIG section above
+
+════════════════════════════════════════════════════ -->
+</body>
+</html>
