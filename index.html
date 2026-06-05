@@ -461,8 +461,7 @@ function showToast(msg, type='success') {
   t._timer = setTimeout(()=>t.className='toast', 3500);
 }
 function showLoading(v) { document.getElementById('loading').classList.toggle('active',v); }
-function isConfigured() { return APPS_SCRIPT_URL && APPS_SCRIPT_URL !== 'https://script.google.com/macros/s/AKfycbzZ9WPCn8YRicBgR0th8FsieZ3Ut8aCRJlAxF0TQG6VfLKgnvaRqCu6-PIepEOW8shb/exec'; }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function isConfigured() { return APPS_SCRIPT_URL && APPS_SCRIPT_URL.startsWith('https://script.google.com'); }function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 function inr(v) { const n=parseFloat(v); return isNaN(n)?'—':'Rs'+n.toLocaleString('en-IN'); }
 function approvalBadge(v) {
   const cls = {Pending:'badge-pending',Approved:'badge-approved',Closed:'badge-closed'}[v]||'badge-pending';
