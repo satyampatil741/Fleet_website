@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,13 +6,14 @@
 <title>108 Fleet Management — Sumeet Facilities</title>
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#080c10;--surface:#0e1520;--surface2:#141d2a;--border:#1f2e42;--accent:#e63946;--green:#00c67a;--gold:#f5a623;--blue:#3b82f6;--purple:#8b5cf6;--text:#e2eaf6;--muted:#5a7296;--muted2:#8ba0bb;--danger:#ef4444;--cyan:#06b6d4;}
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
 ::-webkit-scrollbar{width:4px;height:4px;}::-webkit-scrollbar-track{background:var(--surface);}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
 body::before{content:'';position:fixed;top:-20%;left:50%;width:600px;height:600px;background:radial-gradient(circle,rgba(230,57,70,0.06) 0%,transparent 70%);transform:translateX(-50%);pointer-events:none;z-index:0;}
-#login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;position:relative;z-index:1;}
+#login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;position:relative;z-index:1;padding:24px 0;}
 #login-screen::after{content:'108';position:absolute;font-family:'Rajdhani',sans-serif;font-size:38vw;font-weight:700;color:rgba(230,57,70,0.025);top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;}
 .login-card{background:var(--surface);border:1px solid var(--border);border-top:2px solid var(--accent);padding:40px 36px;width:460px;max-width:94vw;position:relative;z-index:2;box-shadow:0 24px 80px rgba(0,0,0,0.5);}
 .login-org{font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:600;letter-spacing:4px;text-transform:uppercase;color:var(--accent);margin-bottom:10px;}
@@ -31,6 +31,7 @@ input:focus,select:focus,textarea:focus{border-color:rgba(59,130,246,0.6);}
 select option{background:var(--surface2);}textarea{resize:vertical;min-height:70px;}
 input::placeholder,textarea::placeholder{color:var(--muted);}
 .btn{display:inline-flex;align-items:center;gap:6px;padding:10px 20px;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;border:none;transition:all .2s;white-space:nowrap;}
+.btn:disabled{opacity:.5;cursor:not-allowed;}
 .btn-primary{background:var(--accent);color:white;}.btn-primary:hover{background:#c1121f;}
 .btn-success{background:var(--green);color:#080c10;}.btn-success:hover{opacity:.85;}
 .btn-warning{background:var(--gold);color:#080c10;}.btn-warning:hover{opacity:.85;}
@@ -40,12 +41,19 @@ input::placeholder,textarea::placeholder{color:var(--muted);}
 .btn-purple{background:var(--purple);color:white;}.btn-purple:hover{opacity:.85;}
 .btn-full{width:100%;justify-content:center;}.btn-sm{padding:6px 12px;font-size:11px;}.btn-lg{padding:13px 32px;font-size:15px;}
 .login-error{background:rgba(239,68,68,.12);border:1px solid var(--danger);color:#fca5a5;padding:10px 14px;font-size:12px;margin-bottom:14px;display:none;}
+.login-ok{background:rgba(0,198,122,.12);border:1px solid var(--green);color:#8ff0c9;padding:10px 14px;font-size:12px;margin-bottom:14px;display:none;}
 .demo-creds{margin-top:16px;padding:12px;background:var(--surface2);border:1px solid var(--border);font-size:10.5px;color:var(--muted);line-height:1.9;max-height:120px;overflow-y:auto;}
+.login-links{display:flex;justify-content:space-between;margin-top:14px;font-size:11px;}
+.login-links a{color:var(--blue);text-decoration:none;cursor:pointer;letter-spacing:.5px;}
+.login-links a:hover{text-decoration:underline;}
 #app{display:none;position:relative;z-index:1;}
 .topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
 .topbar-brand{font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;letter-spacing:2px;display:flex;align-items:center;gap:10px;}
 .brand-num{background:var(--accent);color:white;font-size:12px;padding:3px 9px;font-weight:700;}
 .topbar-right{display:flex;align-items:center;gap:12px;}
+.conn-pill{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;}
+.conn-dot{width:6px;height:6px;border-radius:50%;background:var(--green);}
+.conn-pill.offline .conn-dot{background:var(--danger);}
 .role-pill{display:flex;align-items:center;gap:7px;padding:5px 12px;border:1px solid var(--border);background:var(--surface2);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;}
 .role-pill .dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
@@ -88,12 +96,14 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:rgba(255,255,255,.02
 .badge-pending{background:rgba(245,166,35,.12);color:var(--gold);}.badge-approved{background:rgba(59,130,246,.12);color:var(--blue);}
 .badge-under{background:rgba(139,92,246,.12);color:var(--purple);}.badge-closed{background:rgba(0,198,122,.12);color:var(--green);}
 .badge-rejected{background:rgba(239,68,68,.14);color:var(--danger);}
+.badge-fast{background:rgba(6,182,212,.14);color:var(--cyan);}
 .form-card{background:var(--surface);border:1px solid var(--border);padding:24px 28px;margin-bottom:20px;}
 .form-card-title{font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--accent);margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--border);}
 .form-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
 .form-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
 .span2{grid-column:span 2;}.span3{grid-column:span 3;}.req::after{content:' *';color:var(--accent);}
 .approval-card{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--gold);padding:18px 20px;margin-bottom:12px;}
+.approval-card.readonly{border-left-color:var(--cyan);opacity:.85;}
 .approval-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;flex-wrap:wrap;gap:8px;}
 .approval-id{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;color:var(--gold);}
 .approval-meta{font-size:11px;color:var(--muted);margin-top:2px;}
@@ -104,6 +114,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:rgba(255,255,255,.02
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;align-items:center;justify-content:center;}
 .modal-overlay.open{display:flex;}
 .modal{background:var(--surface);border:1px solid var(--border);border-top:2px solid var(--accent);width:920px;max-width:96vw;max-height:92vh;overflow-y:auto;padding:28px 30px;}
+.modal.narrow{width:480px;}
 .modal-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;}
 .modal-ttl{font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;}
 .modal-close{background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;}.modal-close:hover{color:var(--accent);}
@@ -131,7 +142,13 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:rgba(255,255,255,.02
 .stage-chip.done{border-color:var(--green);color:var(--green);}
 .stage-chip.current{border-color:var(--gold);color:var(--gold);background:rgba(245,166,35,.08);}
 .stage-chip.rejected{border-color:var(--danger);color:var(--danger);}
+.stage-chip.skipped{border-color:var(--border);color:var(--muted);text-decoration:line-through;opacity:.5;}
 .reject-banner{background:rgba(239,68,68,.1);border:1px solid var(--danger);color:#fca5a5;padding:10px 14px;font-size:12px;margin-bottom:14px;}
+.info-banner{background:rgba(6,182,212,.08);border:1px solid var(--cyan);color:#a5f3fc;padding:10px 14px;font-size:12px;margin-bottom:14px;}
+.otr-items-wrap{border:1px solid var(--border);margin-bottom:10px;}
+.otr-items-wrap table{font-size:12px;}
+.otr-items-wrap input{padding:6px 8px;font-size:12px;}
+.pending-row{display:flex;justify-content:space-between;align-items:center;background:var(--surface2);border:1px solid var(--border);padding:10px 14px;margin-bottom:8px;font-size:12px;}
 @media(max-width:900px){.stats-bar{grid-template-columns:repeat(4,1fr);}.chart-grid{grid-template-columns:1fr;}.chart-grid-2{grid-template-columns:1fr 1fr;}.form-grid{grid-template-columns:1fr 1fr;}.dash-grid{grid-template-columns:repeat(2,1fr);}.report-filters{grid-template-columns:1fr 1fr;}.report-summary{grid-template-columns:repeat(3,1fr);}}
 @media(max-width:600px){.stats-bar{grid-template-columns:repeat(2,1fr);}.form-grid{grid-template-columns:1fr;}.chart-grid-2{grid-template-columns:1fr;}.dash-grid{grid-template-columns:1fr 1fr;}.topbar-brand span:not(.brand-num){display:none;}.report-filters{grid-template-columns:1fr;}.approval-body{grid-template-columns:1fr 1fr;}}
 </style>
@@ -142,30 +159,57 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:rgba(255,255,255,.02
 
 <!-- LOGIN -->
 <div id="login-screen">
-<div class="login-card">
-  <div class="login-org">Sumeet Facilities Ltd · Maharashtra (18 Districts)</div>
+<div class="login-card" id="login-card">
+  <div class="login-org">Sumeet Facilities Ltd · Maharashtra</div>
   <div class="login-title">108 FLEET SYSTEM</div>
-  <div class="login-sub">Full Approval Chain — ADM → DM → Fleet → Purchase → Account</div>
+  <div class="login-sub">ADM → DM → Fleet Desk → (Fleet HOD → Purchase) → Account → Invoice Desk</div>
   <div class="form-group">
     <div class="form-label">Select Your Role</div>
-    <div class="role-grid">
-      <button class="role-btn" data-role="Admin" onclick="selectRole('Admin')"><span>🛡</span>Admin</button>
-      <button class="role-btn active" data-role="ADM" onclick="selectRole('ADM')"><span>📋</span>ADM</button>
-      <button class="role-btn" data-role="DM" onclick="selectRole('DM')"><span>🗂</span>DM</button>
-      <button class="role-btn" data-role="FleetManager" onclick="selectRole('FleetManager')"><span>🏢</span>Fleet Manager</button>
-      <button class="role-btn" data-role="FleetHOD" onclick="selectRole('FleetHOD')"><span>🎖</span>Fleet HOD</button>
-      <button class="role-btn" data-role="Purchase" onclick="selectRole('Purchase')"><span>🛒</span>Purchase</button>
-      <button class="role-btn" data-role="Account" onclick="selectRole('Account')"><span>💳</span>Account</button>
-    </div>
+    <div class="role-grid" id="login-role-grid"></div>
   </div>
   <div class="form-group"><label class="form-label">User ID</label><input type="text" id="login-user" placeholder="e.g. ADM-PUNE-01" autocomplete="off"></div>
   <div class="form-group"><label class="form-label">PIN</label><input type="password" id="login-pass" placeholder="••••••••"></div>
-  <div class="login-error" id="login-error">Invalid credentials.</div>
-  <button class="btn btn-primary btn-full btn-lg" onclick="doLogin()">ENTER SYSTEM</button>
+  <div class="login-error" id="login-error"></div>
+  <div class="login-ok" id="login-ok"></div>
+  <button class="btn btn-primary btn-full btn-lg" id="login-btn" onclick="doLogin()">ENTER SYSTEM</button>
+  <div class="login-links">
+    <a onclick="openSignup()">+ Create my login (Sign Up)</a>
+    <a onclick="openForgot()">Forgot PIN?</a>
+  </div>
   <div class="demo-creds">
     <strong style="color:var(--gold)">SETUP NOTE</strong><br>
-    Log in as <code style="color:var(--text)">Admin</code> first (that ID must exist as one row in the <code style="color:var(--text)">Users</code> sheet before anyone can log in). From the Admin's "User Management" tab you can then create every ADM/DM/Fleet Manager/Fleet HOD/Purchase/Account ID — no need to edit the sheet by hand after that.
+    First Admin ID must exist as a row in the <code style="color:var(--text)">Users</code> sheet (status = Approved) before anyone can sign in. After that, anyone can Sign Up with their <code style="color:var(--text)">@sumeetssg.com</code> email — Admin or Fleet Desk approves new IDs from User Management.
   </div>
+</div>
+</div>
+
+<!-- SIGNUP MODAL -->
+<div class="modal-overlay" id="signup-modal">
+<div class="modal narrow">
+  <div class="modal-hdr"><div class="modal-ttl">CREATE LOGIN ID</div><button class="modal-close" onclick="closeModal('signup-modal')">✕</button></div>
+  <div class="form-group"><label class="form-label req">User ID</label><input type="text" id="su-id" placeholder="e.g. ADM-PUNE-02"></div>
+  <div class="form-group"><label class="form-label req">Name</label><input type="text" id="su-name"></div>
+  <div class="form-group"><label class="form-label req">Role</label><select id="su-role"></select></div>
+  <div class="form-group"><label class="form-label req">Official Email (@sumeetssg.com)</label><input type="email" id="su-email" placeholder="name@sumeetssg.com"></div>
+  <div class="form-group"><label class="form-label req">Set PIN</label><input type="text" id="su-pin" placeholder="4+ digit PIN"></div>
+  <div class="form-grid-2">
+    <div class="form-group"><label class="form-label">Zone</label><input type="text" id="su-zone"></div>
+    <div class="form-group"><label class="form-label">District</label><input type="text" id="su-district"></div>
+  </div>
+  <div id="signup-msg" style="font-size:12px;color:var(--gold);margin-bottom:10px;display:none"></div>
+  <button class="btn btn-success btn-full" onclick="submitSignup()">SUBMIT FOR APPROVAL</button>
+</div>
+</div>
+
+<!-- FORGOT PIN MODAL -->
+<div class="modal-overlay" id="forgot-modal">
+<div class="modal narrow">
+  <div class="modal-hdr"><div class="modal-ttl">FORGOT PIN</div><button class="modal-close" onclick="closeModal('forgot-modal')">✕</button></div>
+  <div style="font-size:12px;color:var(--muted);margin-bottom:14px">New PIN will be emailed to the address registered against your User ID.</div>
+  <div class="form-group"><label class="form-label req">User ID</label><input type="text" id="fg-id"></div>
+  <div class="form-group"><label class="form-label req">Registered Email</label><input type="email" id="fg-email"></div>
+  <div id="forgot-msg" style="font-size:12px;color:var(--gold);margin-bottom:10px;display:none"></div>
+  <button class="btn btn-success btn-full" onclick="submitForgot()">SEND NEW PIN</button>
 </div>
 </div>
 
@@ -174,6 +218,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:rgba(255,255,255,.02
 <div class="topbar">
   <div class="topbar-brand"><span class="brand-num">108</span><span>FLEET MANAGEMENT SYSTEM</span></div>
   <div class="topbar-right">
+    <div class="conn-pill" id="conn-pill"><div class="conn-dot"></div><span id="conn-label">Online</span></div>
     <div class="role-pill"><div class="dot"></div><span id="user-label">—</span></div>
     <button class="btn btn-outline btn-sm" onclick="logout()">LOGOUT</button>
   </div>
@@ -214,28 +259,29 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:rgba(255,255,255,.02
 <div class="page" id="page-datasheet">
   <div class="toolbar">
     <div class="search-wrap"><input type="text" id="search-input" placeholder="Search…" oninput="filterTable()"></div>
-    <select id="f-stage-filter" onchange="filterTable()" style="width:150px"><option value="">All Stages</option></select>
+    <select id="f-stage-filter" onchange="filterTable()" style="width:170px"><option value="">All Stages</option></select>
     <select id="f-district-filter" onchange="filterTable()" style="width:140px"><option value="">All Districts</option></select>
     <button class="btn btn-outline btn-sm" onclick="loadData()">↻ Refresh</button>
     <button class="btn btn-outline btn-sm" onclick="exportCSV()">⬇ CSV</button>
   </div>
   <div class="table-wrap">
-    <table><thead><tr><th>#</th><th>Date</th><th>Vehicle</th><th>Zone</th><th>District</th><th>Cluster</th><th>Complaint</th><th>Vendor</th><th>Estimate</th><th>Final Amt</th><th>Stage</th><th>Status</th><th>Actions</th></tr></thead>
+    <table><thead><tr><th>#</th><th>Date</th><th>Vehicle</th><th>Zone</th><th>District</th><th>Cluster</th><th>Complaint</th><th>Vendor</th><th>Estimate</th><th>Final Amt</th><th>Track</th><th>Stage</th><th>Status</th><th>Actions</th></tr></thead>
     <tbody id="data-tbody"></tbody></table>
   </div>
   <div id="tbl-empty" class="empty" style="display:none"><h3>No Records</h3></div>
   <div class="tbl-count" id="tbl-count"></div>
 </div>
 
-<!-- MY ACTIONS (stage-specific approvals for ADM/DM/FleetManager/FleetHOD/Purchase/Account/Closure) -->
+<!-- MY ACTIONS -->
 <div class="page" id="page-actions">
   <div id="actions-list"></div>
   <div id="actions-empty" class="empty" style="display:none"><h3>All Clear!</h3><p>Nothing pending your review right now.</p></div>
+  <div id="actions-readonly-wrap" style="margin-top:26px"></div>
 </div>
 
-<!-- INVOICE HARDCOPY FOLLOW-UP -->
+<!-- INVOICE HARDCOPY (legacy view-all, read-only for non InvoiceDesk roles) -->
 <div class="page" id="page-hardcopy">
-  <div class="toolbar"><div style="font-size:12px;color:var(--muted)">Physical invoice hardcopies are reconciled twice a month (1–15 / 16–end). Mark each closed request as Received once the hardcopy arrives.</div></div>
+  <div class="toolbar"><div style="font-size:12px;color:var(--muted)">Physical invoice hardcopies are reconciled twice a month (1–15 / 16–end). Invoice Desk marks each closed request Received once the hardcopy physically arrives.</div></div>
   <div class="table-wrap">
     <table><thead><tr><th>#</th><th>Closure Date</th><th>Vehicle</th><th>Vendor</th><th>Invoice No</th><th>Final Amount</th><th>Batch</th><th>Hardcopy Status</th><th>Follow-up Date</th><th>Action</th></tr></thead>
     <tbody id="hardcopy-tbody"></tbody></table>
@@ -308,32 +354,85 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:rgba(255,255,255,.02
       </div>
     </div>
     <div style="display:flex;gap:12px;margin-bottom:40px">
-      <button class="btn btn-success btn-lg" onclick="saveEntry()">✓ SUBMIT TO DM</button>
+      <button class="btn btn-success btn-lg" id="raise-submit-btn" onclick="saveEntry()">✓ SUBMIT TO DM</button>
       <button class="btn btn-outline" onclick="clearForm()">CLEAR</button>
     </div>
   </div>
 </div>
 
-<!-- USER MANAGEMENT (Admin) -->
-<div class="page" id="page-users">
+<!-- RAISE OTR (ADM) — parts / spares requirement -->
+<div class="page" id="page-raise-otr">
   <div style="max-width:900px;margin:0 auto">
+    <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;margin-bottom:4px">RAISE OTR — PARTS / SPARES REQUIREMENT</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:22px">Add part lines manually, or import a full list from Excel (columns: Part No, Part Name, Qty, Unit, Remarks).</div>
     <div class="form-card">
-      <div class="form-card-title">➕ Create Login ID</div>
+      <div class="form-card-title">🚑 Request Info</div>
+      <div class="form-grid">
+        <div class="form-group"><label class="form-label req">Date</label><input type="date" id="o-date"></div>
+        <div class="form-group"><label class="form-label req">Vehicle No</label><input list="vehicle-list-otr" id="o-regno" oninput="autofillVehicleOTR()"><datalist id="vehicle-list-otr"></datalist></div>
+        <div class="form-group"><label class="form-label">District / Zone</label><input type="text" id="o-loc" readonly></div>
+      </div>
+      <div class="form-group"><label class="form-label">Overall Remarks</label><textarea id="o-remarks" placeholder="Any general note about this parts requirement"></textarea></div>
+    </div>
+    <div class="form-card">
+      <div class="form-card-title">🔩 Part Lines</div>
+      <div class="toolbar">
+        <button class="btn btn-outline btn-sm" onclick="addOtrItemRow()">+ Add Line</button>
+        <label class="btn btn-blue btn-sm" style="cursor:pointer">⬆ Import Excel<input type="file" id="otr-excel-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="importOtrExcel(event)"></label>
+      </div>
+      <div class="otr-items-wrap">
+        <table><thead><tr><th>Part No</th><th>Part Name</th><th>Qty</th><th>Unit</th><th>Remarks</th><th></th></tr></thead>
+        <tbody id="otr-items-tbody"></tbody></table>
+      </div>
+    </div>
+    <div style="display:flex;gap:12px;margin-bottom:40px">
+      <button class="btn btn-success btn-lg" id="otr-submit-btn" onclick="saveOtrEntry()">✓ SUBMIT TO FLEET DESK</button>
+      <button class="btn btn-outline" onclick="clearOtrForm()">CLEAR</button>
+    </div>
+  </div>
+</div>
+
+<!-- MY OTR (ADM) -->
+<div class="page" id="page-my-otr">
+  <div style="max-width:900px;margin:0 auto">
+    <div class="toolbar"><button class="btn btn-outline btn-sm" onclick="loadData()">↻ Refresh</button></div>
+    <div id="my-otr-list"></div>
+    <div id="my-otr-empty" class="empty" style="display:none"><h3>No OTR Requests Yet</h3></div>
+  </div>
+</div>
+
+<!-- OTR ACTIONS (FleetDesk / Purchase / Account / InvoiceDesk) -->
+<div class="page" id="page-otr-actions">
+  <div id="otr-actions-list"></div>
+  <div id="otr-actions-empty" class="empty" style="display:none"><h3>All Clear!</h3><p>No OTR requests pending your review.</p></div>
+</div>
+
+<!-- USER MANAGEMENT (Admin / Fleet Desk) -->
+<div class="page" id="page-users">
+  <div style="max-width:960px;margin:0 auto">
+    <div class="form-card" id="pending-approvals-card">
+      <div class="form-card-title">⏳ Pending Sign-Up Approvals</div>
+      <div id="pending-list"></div>
+      <div id="pending-empty" style="font-size:12px;color:var(--muted)">No pending sign-ups.</div>
+    </div>
+    <div class="form-card">
+      <div class="form-card-title">➕ Create Login ID Directly</div>
       <div class="form-grid">
         <div class="form-group"><label class="form-label req">User ID</label><input type="text" id="u-id" placeholder="e.g. ADM-PUNE-01"></div>
         <div class="form-group"><label class="form-label req">Name</label><input type="text" id="u-name"></div>
-        <div class="form-group"><label class="form-label req">Role</label><select id="u-role"><option>ADM</option><option>DM</option><option>FleetManager</option><option>FleetHOD</option><option>Purchase</option><option>Account</option><option>Admin</option></select></div>
+        <div class="form-group"><label class="form-label req">Role</label><select id="u-role"></select></div>
         <div class="form-group"><label class="form-label req">PIN</label><input type="text" id="u-pin" placeholder="Set a PIN"></div>
+        <div class="form-group"><label class="form-label">Email (@sumeetssg.com)</label><input type="email" id="u-email"></div>
         <div class="form-group"><label class="form-label">Zone</label><input type="text" id="u-zone"></div>
         <div class="form-group"><label class="form-label">District</label><input type="text" id="u-district"></div>
       </div>
-      <div style="margin-top:16px"><button class="btn btn-success" onclick="createUser()">✓ CREATE ID</button></div>
+      <div style="margin-top:16px"><button class="btn btn-success" onclick="createUser()">✓ CREATE ID (Auto-Approved)</button></div>
     </div>
     <div class="toolbar"><div style="font-size:12px;color:var(--muted)">All login IDs currently in the Users sheet:</div><button class="btn btn-outline btn-sm" onclick="loadData()">↻ Refresh</button></div>
     <div class="table-wrap">
-      <table><thead><tr><th>User ID</th><th>Name</th><th>Role</th><th>Zone</th><th>District</th></tr></thead><tbody id="users-tbody"></tbody></table>
+      <table><thead><tr><th>User ID</th><th>Name</th><th>Role</th><th>Zone</th><th>District</th><th>Status</th><th>Action</th></tr></thead><tbody id="users-tbody"></tbody></table>
     </div>
-    <div id="users-empty" class="empty" style="display:none"><h3>No IDs Created Yet</h3><p>Create the first ADM / DM / Fleet / Purchase / Account ID above.</p></div>
+    <div id="users-empty" class="empty" style="display:none"><h3>No IDs Created Yet</h3></div>
   </div>
 </div>
 
@@ -367,14 +466,38 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:rgba(255,255,255,.02
 // ════════════════════════════════
 // CONFIG
 // ════════════════════════════════
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxe-bPWDjq78mJZBzk8ICPxIeahL7SCe6DwNkz3fKWP_mU1W4hZJrWwcmnLYD__Y2F3/exec'; // <-- redeploy with the new Code.gs and paste the fresh URL here
+const APPS_SCRIPT_URL = 'PASTE_YOUR_NEW_DEPLOYMENT_EXEC_URL_HERE'; // <-- redeploy Code.gs as a NEW deployment and paste that /exec URL here
+const ALLOWED_EMAIL_DOMAIN = 'sumeetssg.com';
+const LOW_VALUE_LIMIT = 3000;
 
-const STAGE_ORDER = ['ADM','DM','FleetManager','FleetHOD','Purchase','Account','Closure','Done'];
-const STAGE_LABEL = {ADM:'ADM Review',DM:'DM Approval',FleetManager:'Fleet Manager',FleetHOD:'Fleet HOD',Purchase:'Purchase',Account:'Account',Closure:'Closure',Done:'Closed'};
+const ROLE_META = {
+  Admin:      {label:'Admin',       icon:'🛡'},
+  ADM:        {label:'ADM',         icon:'📋'},
+  DM:         {label:'DM',          icon:'🗂'},
+  FleetDesk:  {label:'Fleet Desk',  icon:'🏢'},
+  FleetHOD:   {label:'Fleet HOD',   icon:'🎖'},
+  Purchase:   {label:'Purchase',    icon:'🛒'},
+  Account:    {label:'Account',     icon:'💳'},
+  InvoiceDesk:{label:'Invoice Desk',icon:'🧾'}
+};
+const ALL_ROLES = Object.keys(ROLE_META);
+const SIGNUP_ROLES = ALL_ROLES.filter(r=>r!=='Admin'); // Admin ID created manually in sheet only
 
-// Fields each role fills when acting on a request. type: text/number/date/textarea/select/vendor/recipient
+const STAGE_ORDER = ['ADM','DM','FleetDesk','FleetHOD','Purchase','Account','InvoiceDesk','InvoiceDesk2','Done'];
+const STAGE_LABEL = {ADM:'ADM Review',DM:'DM Approval',FleetDesk:'Fleet Desk',FleetHOD:'Fleet HOD',Purchase:'Purchase',Account:'Account (Payment)',InvoiceDesk:'Invoice Desk',InvoiceDesk2:'Invoice Desk (Hardcopy)',Done:'Closed'};
+// which login role acts at which stage
+const STAGE_ROLE = {ADM:'ADM',DM:'DM',FleetDesk:'FleetDesk',FleetHOD:'FleetHOD',Purchase:'Purchase',Account:'Account',InvoiceDesk:'InvoiceDesk',InvoiceDesk2:'InvoiceDesk'};
+// db column prefix for id/name/date fields at each stage
+const STAGE_FIELD_PREFIX = {ADM:'adm',DM:'dm',FleetDesk:'fleetManager',FleetHOD:'fleetHod',Purchase:'purchase',Account:'account',InvoiceDesk:'invoiceDesk'};
+// db column for the "status" of that stage (irregular names kept for backward compatibility)
+const STATUS_FIELD_MAP = {DM:'dmApproval',FleetDesk:'fleetManagerStatus',FleetHOD:'fleetHodStatus',Purchase:'purchaseStatus',Account:'accountStatus'};
+
+const OTR_STAGE_ORDER = ['ADM','FleetDesk','Purchase','Account','InvoiceDesk','InvoiceDesk2','Done'];
+const OTR_STAGE_LABEL = {ADM:'ADM Raised',FleetDesk:'Fleet Desk',Purchase:'Purchase',Account:'Account (Payment)',InvoiceDesk:'Invoice Desk',InvoiceDesk2:'Invoice Desk (Hardcopy)',Done:'Closed'};
+
+// Fields each role fills when acting on a request. type: text/number/date/textarea/select/vendor
 const STAGES = {
-  ADM: { next:'DM', selfRole:'ADM', fields:[
+  ADM: { fields:[
       {id:'workDetails',label:'Work Details / Process',type:'textarea',req:true},
       {id:'typeOfWork',label:'Type of Work',type:'text'},
       {id:'vendorName',label:'Vendor Name',type:'vendor',req:true},
@@ -388,35 +511,33 @@ const STAGES = {
       {id:'bankAccHolderName',label:"Account Holder's Name",type:'text'},
       {id:'admMedia',label:'Photo/Video Links (vehicle under maintenance)',type:'textarea',ph:'Paste Drive/SharePoint links, one per line'},
       {id:'admRemarks',label:'ADM Remarks',type:'text'}
-  ]},
-  DM: { next:'FleetManager', selfRole:'DM', fields:[
+  ], next:()=>'DM' },
+  DM: { fields:[
       {id:'dmRemarks',label:'DM Remarks',type:'textarea'}
-  ]},
-  FleetManager: { next:'FleetHOD', selfRole:'FleetManager', fields:[
+  ], next:()=>'FleetDesk' },
+  FleetDesk: { fields:[
       {id:'fleetProcessDate',label:'Process Date',type:'date'},
       {id:'fleetNegotiatedDate',label:'Negotiated Date',type:'date'},
       {id:'fleetFinalAmount',label:'Final Amount (Rs)',type:'number'},
-      {id:'fleetManagerRemarks',label:'Fleet Manager Remarks',type:'textarea'}
-  ]},
-  FleetHOD: { next:'Purchase', selfRole:'FleetHOD', fields:[
+      {id:'fleetManagerRemarks',label:'Fleet Desk Remarks',type:'textarea'}
+  ], next:(row,vals)=>{
+      const amt = parseFloat(vals.fleetFinalAmount || row.estimateAmount || 0);
+      return amt <= LOW_VALUE_LIMIT ? 'Account' : 'FleetHOD';
+    } },
+  FleetHOD: { fields:[
+      {id:'fleetHodNegotiatedDate',label:'Negotiated Date',type:'date'},
+      {id:'fleetHodNegotiatedAmount',label:'Negotiated Amount (Rs)',type:'number'},
+      {id:'fleetHodFinalAmount',label:'Final Amount (Rs)',type:'number'},
       {id:'fleetHodRemarks',label:'HOD Remarks',type:'textarea'}
-  ]},
-  Purchase: { next:'Account', selfRole:'Purchase', fields:[
+  ], next:()=>'Purchase' },
+  Purchase: { fields:[
       {id:'purchaseNegotiatedAmount',label:'Negotiated Amount (Rs)',type:'number'},
       {id:'purchaseRemarks',label:'Purchase Remarks',type:'textarea'}
-  ]},
-  Account: { next:'Closure', selfRole:'Account', fields:[
-      {id:'accountFinalAmount',label:'Final Payable Amount (Rs)',type:'number',req:true},
-      {id:'accountRemarks',label:'Account Remarks',type:'textarea'}
-  ]},
-  Closure: { next:'Done', selfRole:'CLOSURE', fields:[  // ADM or DM can close
-      {id:'closurePhotos',label:'Completion Photo/Video Links',type:'textarea',ph:'Paste links, one per line'},
-      {id:'closureInvoiceNo',label:'Invoice No.',type:'text'},
-      {id:'closureRemarks',label:'Closure Remarks',type:'textarea'}
-  ]}
+  ], next:()=>'Account' }
 };
 
-let user=null, allData=[], masters={vehicles:[],vendors:[],users:[]}, filteredData=[], editId=null, charts={};
+let user=null, allData=[], otrData=[], masters={vehicles:[],vendors:[],users:[]}, filteredData=[], editId=null, editType='fleet', charts={};
+let isOnline = navigator.onLine;
 
 // ════════════════════════════════
 // UTILS
@@ -428,19 +549,24 @@ function closeModal(id){$(id).classList.remove('open');}
 function inr(v){const n=parseFloat(v);return isNaN(n)||n===0?'—':'Rs'+n.toLocaleString('en-IN');}
 function fd(d){return d?new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):'-';}
 function sl(s){try{return JSON.parse(s||'[]');}catch{return[];}}
+function nowDate(){return new Date().toISOString().split('T')[0];}
 function stageBadge(r){
   if((r.overallStatus||'').indexOf('Rejected')===0) return '<span class="badge badge-rejected">Rejected</span>';
   if(r.stage==='Done') return '<span class="badge badge-closed">Closed</span>';
   return '<span class="badge badge-pending">'+(STAGE_LABEL[r.stage]||r.stage)+'</span>';
+}
+function trackBadge(r){
+  if(!r.approvalTrack) return '';
+  return r.approvalTrack==='Fast' ? '<span class="badge badge-fast">Fast (≤₹3K)</span>' : '<span class="badge" style="background:rgba(139,92,246,.12);color:var(--purple)">Full Chain</span>';
 }
 function amountForRow(r){
   return r.accountFinalAmount || r.fleetFinalAmount || r.purchaseNegotiatedAmount || r.estimateAmount || '';
 }
 
 // ════════════════════════════════
-// JSONP — ALL API CALLS via GET
+// JSONP — ALL API CALLS via GET, with retry + offline cache
 // ════════════════════════════════
-function call(params){
+function callOnce(params,timeoutMs){
   return new Promise(resolve=>{
     const cb='_cb'+Date.now()+Math.random().toString(36).slice(2,6);
     const script=document.createElement('script');
@@ -461,34 +587,60 @@ function call(params){
     };
     setTimeout(()=>{
       if(window[cb]){delete window[cb];try{document.head.removeChild(script);}catch(e){}resolve({success:false,error:'Timeout'});}
-    },15000);
+    },timeoutMs);
     script.src=url;
     document.head.appendChild(script);
   });
 }
+async function call(params){
+  // low-connectivity friendly: generous timeout + one silent retry before surfacing an error
+  let r = await callOnce(params,20000);
+  if(!r || r.success===false){
+    r = await callOnce(params,25000);
+  }
+  return r;
+}
+function cacheSet(key,val){ try{ localStorage.setItem('fleet108_'+key, JSON.stringify(val)); }catch(e){} }
+function cacheGet(key){ try{ const v=localStorage.getItem('fleet108_'+key); return v?JSON.parse(v):null; }catch(e){ return null; } }
 
 // ════════════════════════════════
 // DATA OPS
 // ════════════════════════════════
+let loadInFlight=false;
 async function loadData(){
+  if(loadInFlight) return;
+  loadInFlight=true;
+  // instant paint from cache (helps a lot on slow/patchy connections)
+  const cachedFleet=cacheGet('fleet'), cachedOtr=cacheGet('otr'), cachedMasters=cacheGet('masters');
+  if(cachedFleet && !allData.length){allData=cachedFleet;afterLoad();}
+  if(cachedOtr && !otrData.length){otrData=cachedOtr;}
+  if(cachedMasters && !masters.users.length){masters=cachedMasters;populateVehicleList();}
   loading(true);
-  const [r,m]=await Promise.all([call({action:'getAll'}),call({action:'getMasters'})]);
+  const needsOtr = ['ADM','FleetDesk','Purchase','Account','InvoiceDesk','Admin'].includes(user.role);
+  const calls=[call({action:'getAll'}),call({action:'getMasters'})];
+  if(needsOtr) calls.push(call({action:'getOTR'})); else calls.push(Promise.resolve({success:true,data:[]}));
+  const [r,m,o]=await Promise.all(calls);
   loading(false);
-  if(r&&r.success){allData=(r.data||[]).map(x=>({...x,logs:x.logs||'[]'}));}
-  else{toast('Load failed: '+(r.error||'unknown'),'error');allData=[];}
-  if(m&&m.success){masters=m.data;populateVehicleList();}
+  loadInFlight=false;
+  if(r&&r.success){allData=(r.data||[]).map(x=>({...x,logs:x.logs||'[]'}));cacheSet('fleet',allData);}
+  else{toast('Load failed (showing last saved data): '+(r&&r.error||'network issue'),'warn');}
+  if(m&&m.success){masters=m.data;populateVehicleList();cacheSet('masters',masters);}
+  if(o&&o.success){otrData=(o.data||[]).map(x=>({...x,logs:x.logs||'[]'}));cacheSet('otr',otrData);}
   afterLoad();
 }
 async function addData(data){loading(true);const r=await call({action:'addRow',data:data});loading(false);return r;}
 async function updateData(data){loading(true);const r=await call({action:'updateRow',data:data});loading(false);return r;}
+async function addOtrData(data){loading(true);const r=await call({action:'addOTR',data:data});loading(false);return r;}
+async function updateOtrData(data){loading(true);const r=await call({action:'updateOTR',data:data});loading(false);return r;}
 
 function afterLoad(){
-  if(user.role==='Admin')renderUsersTable();
-  if(user.role==='ADM')renderMyRequests(allData.filter(r=>r.admId===user.userId));
+  if(user.role==='Admin'||user.role==='FleetDesk'){renderUsersTable();renderPending();}
+  if(user.role==='ADM'){renderMyRequests(allData.filter(r=>r.admId===user.userId));renderMyOtr(otrData.filter(r=>r.admId===user.userId));}
   updateStats(allData);
   renderTable(allData);
   renderCharts(allData);
   renderActions(allData);
+  renderOtrActions(otrData);
   renderHardcopy(allData);
   populateFilters(allData);
 }
@@ -497,6 +649,10 @@ function afterLoad(){
 // AUTH
 // ════════════════════════════════
 let selRole='ADM';
+function buildRoleGrid(){
+  const grid=$('login-role-grid');
+  grid.innerHTML = ALL_ROLES.map(r=>'<button class="role-btn'+(r===selRole?' active':'')+'" data-role="'+r+'" onclick="selectRole(\''+r+'\')"><span>'+ROLE_META[r].icon+'</span>'+ROLE_META[r].label+'</button>').join('');
+}
 function selectRole(r){
   selRole=r;
   document.querySelectorAll('.role-btn').forEach(b=>b.classList.toggle('active',b.dataset.role===r));
@@ -507,9 +663,11 @@ async function doLogin(){
   const err=$('login-error');
   err.style.display='none';
   if(!userId||!pin){err.textContent='Enter your User ID and PIN.';err.style.display='block';return;}
+  $('login-btn').disabled=true;
   loading(true);
   const r=await call({action:'login',userId:userId,pin:pin});
   loading(false);
+  $('login-btn').disabled=false;
   if(r&&r.success){
     if(r.user.role!==selRole){err.textContent='This ID is registered under a different role.';err.style.display='block';return;}
     user=r.user;launch();
@@ -519,37 +677,51 @@ async function doLogin(){
 }
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&$('login-screen').style.display!=='none')doLogin();});
 function logout(){
-  user=null;allData=[];
+  user=null;allData=[];otrData=[];
   $('login-screen').style.display='flex';
   $('app').style.display='none';
   $('login-pass').value='';$('login-user').value='';
-  selectRole('ADM');
+  selectRole('ADM');buildRoleGrid();
 }
 function launch(){
   $('login-screen').style.display='none';
   $('app').style.display='block';
-  $('user-label').textContent=user.name+' · '+(STAGE_LABEL[user.role]||user.role);
+  $('user-label').textContent=user.name+' · '+(ROLE_META[user.role]?ROLE_META[user.role].label:user.role);
   const nav=$('nav-tabs');nav.innerHTML='';
   let tabs=[],landing='dashboard';
   if(user.role==='Admin'){
-    tabs=[['users','User Management'],['dashboard','Dashboard'],['datasheet','Data Sheet']];
+    tabs=[['users','User Management'],['otr-actions','OTR Actions'],['dashboard','Dashboard'],['datasheet','Data Sheet'],['reports','Reports']];
     landing='users';
     $('stats-bar').style.display='grid';
   }else if(user.role==='ADM'){
-    tabs=[['raise','Raise Request'],['myrequests','My Requests'],['actions','My Actions'],['dashboard','Dashboard'],['datasheet','Data Sheet'],['hardcopy','Invoice Hardcopy'],['reports','Reports']];
+    tabs=[['raise','Raise Request'],['myrequests','My Requests'],['raise-otr','Raise OTR'],['my-otr','My OTR'],['actions','My Actions'],['dashboard','Dashboard'],['datasheet','Data Sheet'],['hardcopy','Invoice Hardcopy'],['reports','Reports']];
     landing='raise';
     $('stats-bar').style.display='grid';
+  }else if(user.role==='FleetDesk'){
+    tabs=[['actions','My Actions'],['otr-actions','OTR Actions'],['users','User Management'],['dashboard','Dashboard'],['datasheet','Data Sheet'],['hardcopy','Invoice Hardcopy'],['reports','Reports']];
+    landing='actions';
+    $('stats-bar').style.display='grid';
+  }else if(['Purchase','Account','InvoiceDesk'].includes(user.role)){
+    tabs=[['actions','My Actions'],['otr-actions','OTR Actions'],['dashboard','Dashboard'],['datasheet','Data Sheet'],['hardcopy','Invoice Hardcopy'],['reports','Reports']];
+    landing='actions';
+    $('stats-bar').style.display='grid';
   }else{
-    tabs=[['dashboard','Dashboard'],['datasheet','Data Sheet'],['actions','My Actions'],['hardcopy','Invoice Hardcopy'],['reports','Reports']];
+    tabs=[['actions','My Actions'],['dashboard','Dashboard'],['datasheet','Data Sheet'],['hardcopy','Invoice Hardcopy'],['reports','Reports']];
+    landing='actions';
     $('stats-bar').style.display='grid';
   }
-  tabs.forEach(([id,lbl],i)=>{
+  tabs.forEach(([id,lbl])=>{
     const b=document.createElement('button');
     b.className='nav-tab'+(id===landing?' active':'');
     b.dataset.tab=id;b.textContent=lbl;b.onclick=()=>tab(id);nav.appendChild(b);
   });
   if(user.role==='ADM'){
-    const today=new Date().toISOString().split('T')[0];$('f-date').value=today;
+    $('f-date').value=nowDate();
+    $('o-date').value=nowDate();
+    if(!document.querySelectorAll('#otr-items-tbody tr').length) addOtrItemRow();
+  }
+  if(user.role==='Admin'||user.role==='FleetDesk'){
+    const sel=$('u-role'); if(sel) sel.innerHTML = SIGNUP_ROLES.map(r=>'<option>'+r+'</option>').join('');
   }
   loadData();tab(landing);
 }
@@ -560,11 +732,44 @@ function tab(id){
   const t=document.querySelector('.nav-tab[data-tab="'+id+'"]');if(t)t.classList.add('active');
 }
 
+// ---- signup / forgot pin ----
+function openSignup(){
+  const sel=$('su-role'); sel.innerHTML=SIGNUP_ROLES.map(r=>'<option value="'+r+'">'+ROLE_META[r].label+'</option>').join('');
+  $('signup-msg').style.display='none';
+  $('signup-modal').classList.add('open');
+}
+async function submitSignup(){
+  const id=$('su-id').value.trim(), name=$('su-name').value.trim(), role=$('su-role').value, email=$('su-email').value.trim(), pin=$('su-pin').value.trim();
+  if(!id||!name||!role||!email||!pin){toast('All required fields must be filled','error');return;}
+  if(!email.toLowerCase().endsWith('@'+ALLOWED_EMAIL_DOMAIN)){toast('Only @'+ALLOWED_EMAIL_DOMAIN+' email IDs allowed','error');return;}
+  loading(true);
+  const r=await call({action:'signup',data:{userId:id,name:name,role:role,email:email,pin:pin,zone:$('su-zone').value.trim(),district:$('su-district').value.trim()}});
+  loading(false);
+  if(r&&r.success){
+    const m=$('signup-msg');m.style.color='var(--green)';m.textContent=r.message||'Submitted. Waiting for approval.';m.style.display='block';
+    toast('Sign-up submitted — waiting for approval','ok');
+  }else{
+    const m=$('signup-msg');m.style.color='var(--danger)';m.textContent=r&&r.error||'Signup failed';m.style.display='block';
+  }
+}
+function openForgot(){ $('forgot-msg').style.display='none'; $('forgot-modal').classList.add('open'); }
+async function submitForgot(){
+  const id=$('fg-id').value.trim(), email=$('fg-email').value.trim();
+  if(!id||!email){toast('Enter User ID and email','error');return;}
+  loading(true);
+  const r=await call({action:'forgotPin',userId:id,email:email});
+  loading(false);
+  const m=$('forgot-msg');
+  if(r&&r.success){m.style.color='var(--green)';m.textContent=r.message||'New PIN sent.';m.style.display='block';}
+  else{m.style.color='var(--danger)';m.textContent=r&&r.error||'Failed to reset PIN';m.style.display='block';}
+}
+
 // ════════════════════════════════
 // VEHICLE / VENDOR AUTOFILL
 // ════════════════════════════════
 function populateVehicleList(){
   const dl=$('vehicle-list');if(dl)dl.innerHTML=masters.vehicles.map(v=>'<option value="'+v.vehicleNo+'">').join('');
+  const dl2=$('vehicle-list-otr');if(dl2)dl2.innerHTML=masters.vehicles.map(v=>'<option value="'+v.vehicleNo+'">').join('');
   const vl=$('vendor-list-raise');if(vl)vl.innerHTML=masters.vendors.map(v=>'<option value="'+v.vendorName+'">').join('');
 }
 function autofillVehicle(){
@@ -573,6 +778,11 @@ function autofillVehicle(){
   $('f-zone').value=v.zone;$('f-district').value=v.district;$('f-cluster').value=v.cluster;
   $('f-baselocation').value=v.baseLocation;$('f-make').value=v.make;
 }
+function autofillVehicleOTR(){
+  const v=masters.vehicles.find(x=>x.vehicleNo===$('o-regno').value.trim());
+  if(!v)return;
+  $('o-loc').value=(v.district||'')+' / '+(v.zone||'');
+}
 function vehicleLookup(regno){return masters.vehicles.find(x=>x.vehicleNo===regno);}
 function vendorLookup(name){return masters.vendors.find(x=>x.vendorName===name);}
 
@@ -580,18 +790,14 @@ function vendorLookup(name){return masters.vendors.find(x=>x.vendorName===name);
 // STATS
 // ════════════════════════════════
 function myPendingCount(d){
-  if(user.role==='FleetManager'||user.role==='FleetHOD'||user.role==='Purchase'||user.role==='Account')
-    return d.filter(r=>r.stage===user.role).length;
-  if(user.role==='ADM')return d.filter(r=>r.stage==='ADM').length;
-  if(user.role==='DM')return d.filter(r=>r.stage==='DM').length;
-  return 0;
+  return d.filter(r=>r.stage===user.role && (!r.assignedTo || r.assignedTo===user.userId)).length;
 }
 function updateStats(d){
   const closed=d.filter(x=>x.stage==='Done').length;
   const rejected=d.filter(x=>(x.overallStatus||'').indexOf('Rejected')===0).length;
-  const repair=d.filter(x=>['FleetManager','FleetHOD','Purchase','Account','Closure'].includes(x.stage)).length;
+  const repair=d.filter(x=>['FleetDesk','FleetHOD','Purchase','Account','InvoiceDesk','InvoiceDesk2'].includes(x.stage)).length;
   const inv=d.reduce((s,x)=>s+(parseFloat(amountForRow(x))||0),0);
-  const hardcopyPending=d.filter(x=>x.stage==='Done'&&x.hardcopyStatus!=='Received').length;
+  const hardcopyPending=d.filter(x=>x.stage==='InvoiceDesk2').length;
   $('s-total').textContent=d.length;
   $('s-mypending').textContent=myPendingCount(d);
   $('s-repair').textContent=repair;
@@ -625,6 +831,7 @@ function renderTable(d){
       +'<td>'+(r.vendorName||'—')+'</td>'
       +'<td>'+(r.estimateAmount?'Rs'+parseFloat(r.estimateAmount).toLocaleString('en-IN'):'—')+'</td>'
       +'<td><strong>'+inr(amountForRow(r))+'</strong></td>'
+      +'<td>'+trackBadge(r)+'</td>'
       +'<td>'+stageBadge(r)+'</td>'
       +'<td style="font-size:11px;color:var(--muted)">'+(r.overallStatus||'')+'</td>'
       +'<td><button class="btn btn-outline btn-sm" onclick="openDetail(\''+r.id+'\')">View</button></td></tr>';
@@ -652,59 +859,86 @@ function populateFilters(d){
 }
 
 // ════════════════════════════════
-// MY ACTIONS — generic stage-driven approvals
+// ROUTING HELPERS — who should see a row
 // ════════════════════════════════
-function myStage(){
-  if(user.role==='ADM')return 'ADM';
-  if(user.role==='DM')return 'DM';
-  if(user.role==='FleetManager')return 'FleetManager';
-  if(user.role==='FleetHOD')return 'FleetHOD';
-  if(user.role==='Purchase')return 'Purchase';
-  if(user.role==='Account')return 'Account';
-  return null;
-}
-function renderActions(d){
-  const stage=myStage();
-  let pen;
-  if(user.role==='ADM'||user.role==='DM'){
-    // ADM & DM also perform Closure once request reaches that stage
-    pen=d.filter(x=>x.stage===stage || x.stage==='Closure');
-  }else{
-    pen=d.filter(x=>x.stage===stage);
+const GEO_SCOPED_ROLES = ['ADM','DM']; // roles where district/zone matching matters; desks are centralised
+function visibleToMe(r,stageKey){
+  if(r.stage!==stageKey) return false;
+  if(r.assignedTo && r.assignedTo!==user.userId) return false; // sent back to a specific person, not me
+  if(!r.assignedTo && GEO_SCOPED_ROLES.includes(user.role) && user.district){
+    // no specific person named -> only show rows in my own district so we don't flood every ADM/DM statewide
+    if((r.district||'').trim().toLowerCase() !== user.district.trim().toLowerCase()) return false;
   }
-  const list=$('actions-list'),em=$('actions-empty');
-  if(!pen.length){list.innerHTML='';em.style.display='block';return;}
-  em.style.display='none';
-  list.innerHTML=pen.map(r=>{
-    const isClosure=r.stage==='Closure';
-    return '<div class="approval-card">'
-      +'<div class="approval-hdr">'
-      +'<div><div class="approval-id">'+r.vehicleNo+'</div>'
-      +'<div class="approval-meta">'+fd(r.reqDate)+' | '+(r.district||'—')+' / '+(r.cluster||'—')+' | Raised by '+(r.raisedBy||'—')+'</div></div>'
-      +stageBadge(r)+'</div>'
-      +stageTrack(r)
-      +(r.rejectedReason?'<div class="reject-banner">Returned reason: '+r.rejectedReason+'</div>':'')
-      +'<div class="approval-body">'
-      +'<div><div class="ab-lbl">Complaint</div><div class="ab-val" style="font-size:12px;font-weight:400">'+((r.complaint||'').substring(0,55))+'</div></div>'
-      +'<div><div class="ab-lbl">Vendor</div><div class="ab-val" style="font-size:13px">'+(r.vendorName||'—')+'</div></div>'
-      +'<div><div class="ab-lbl">Estimate</div><div class="ab-val sv-gold">'+inr(r.estimateAmount)+'</div></div>'
-      +'<div><div class="ab-lbl">Running Amount</div><div class="ab-val sv-red">'+inr(amountForRow(r))+'</div></div>'
-      +'</div>'
-      +'<div class="approval-actions">'
-      +(isClosure
-        ?'<button class="btn btn-success btn-sm" onclick="openStageModal(\''+r.id+'\',\'Closure\')">✓ CLOSE REQUEST</button>'
-        :'<button class="btn btn-success btn-sm" onclick="openStageModal(\''+r.id+'\',\''+stage+'\')">✓ APPROVE & FORWARD</button>'
-         +'<button class="btn btn-danger btn-sm" onclick="openReject(\''+r.id+'\',\''+stage+'\')">✕ REJECT / SEND BACK</button>')
-      +'<button class="btn btn-outline btn-sm" onclick="openDetail(\''+r.id+'\')">Full Detail</button>'
-      +'</div></div>';
-  }).join('');
+  return true;
+}
+
+// ════════════════════════════════
+// MY ACTIONS — generic stage-driven approvals (breakdown requests)
+// ════════════════════════════════
+function renderActions(d){
+  const stage = STAGE_ORDER.find(s=>STAGE_ROLE[s]===user.role) ; // primary stage key for this role (ADM/DM/FleetDesk/FleetHOD/Purchase/Account)
+  const list=$('actions-list'),em=$('actions-empty'),roWrap=$('actions-readonly-wrap');
+  roWrap.innerHTML='';
+  if(!stage){list.innerHTML='';em.style.display='block';return;}
+
+  let pen = d.filter(x=>visibleToMe(x,user.role==='Account'?'Account':stage));
+  // ADM & DM also see items sent back specifically to them even if not exactly matching primary stage key naming
+  if(user.role==='InvoiceDesk'){
+    pen = d.filter(x=>visibleToMe(x,'InvoiceDesk')).concat(d.filter(x=>visibleToMe(x,'InvoiceDesk2')));
+  }
+
+  if(!pen.length){list.innerHTML='';em.style.display='block';}
+  else{
+    em.style.display='none';
+    list.innerHTML=pen.map(r=>renderActionCard(r)).join('');
+  }
+
+  // read-only "fast-tracked, skipped" info panel for FleetHOD / Purchase
+  if(['FleetHOD','Purchase'].includes(user.role)){
+    const skipped = d.filter(x=>x.approvalTrack==='Fast' && STAGE_ORDER.indexOf(x.stage) > STAGE_ORDER.indexOf('FleetDesk') && x.stage!=='Done');
+    if(skipped.length){
+      roWrap.innerHTML = '<div class="chart-ttl" style="margin-bottom:10px">FAST-TRACKED (≤₹3K) — INFO ONLY, NO ACTION NEEDED</div>'
+        + skipped.map(r=>'<div class="approval-card readonly"><div class="approval-hdr"><div><div class="approval-id">'+r.vehicleNo+'</div><div class="approval-meta">'+fd(r.reqDate)+' | '+(r.district||'—')+' | Est. '+inr(r.estimateAmount)+'</div></div>'+stageBadge(r)+'</div><button class="btn btn-outline btn-sm" onclick="openDetail(\''+r.id+'\')">View</button></div>').join('');
+    }
+  }
+}
+function renderActionCard(r){
+  const stage=r.stage;
+  const isAccount = stage==='Account';
+  const isInvoiceDesk1 = stage==='InvoiceDesk';
+  const isInvoiceDesk2 = stage==='InvoiceDesk2';
+  const isGeneric = STAGES[stage] !== undefined;
+  return '<div class="approval-card">'
+    +'<div class="approval-hdr">'
+    +'<div><div class="approval-id">'+r.vehicleNo+'</div>'
+    +'<div class="approval-meta">'+fd(r.reqDate)+' | '+(r.district||'—')+' / '+(r.cluster||'—')+' | Raised by '+(r.raisedBy||r.admName||'—')+'</div></div>'
+    +stageBadge(r)+' '+trackBadge(r)+'</div>'
+    +stageTrack(r)
+    +(r.rejectedReason?'<div class="reject-banner">Returned reason ('+(STAGE_LABEL[r.sentBackFrom]||r.sentBackFrom||'')+'): '+r.rejectedReason+'</div>':'')
+    +'<div class="approval-body">'
+    +'<div><div class="ab-lbl">Complaint</div><div class="ab-val" style="font-size:12px;font-weight:400">'+((r.complaint||'').substring(0,55))+'</div></div>'
+    +'<div><div class="ab-lbl">Vendor</div><div class="ab-val" style="font-size:13px">'+(r.vendorName||'—')+'</div></div>'
+    +'<div><div class="ab-lbl">Estimate</div><div class="ab-val sv-gold">'+inr(r.estimateAmount)+'</div></div>'
+    +'<div><div class="ab-lbl">Running Amount</div><div class="ab-val sv-red">'+inr(amountForRow(r))+'</div></div>'
+    +'</div>'
+    +'<div class="approval-actions">'
+    +(isAccount ? '<button class="btn btn-success btn-sm" onclick="openAccountModal(\''+r.id+'\')">💳 RECORD PAYMENT</button>'
+      : isInvoiceDesk1 ? '<button class="btn btn-success btn-sm" onclick="openInvoiceDeskModal(\''+r.id+'\')">🧾 CLOSURE 1 — INVOICE</button>'
+      : isInvoiceDesk2 ? '<button class="btn btn-success btn-sm" onclick="openHardcopy(\''+r.id+'\')">📦 CLOSURE 2 — HARDCOPY</button>'
+      : isGeneric ? '<button class="btn btn-success btn-sm" onclick="openStageModal(\''+r.id+'\',\''+stage+'\')">✓ APPROVE & FORWARD</button>'
+      : '')
+    +(stage!=='Done' ? '<button class="btn btn-danger btn-sm" onclick="openReject(\''+r.id+'\',\''+stage+'\')">✕ SEND BACK</button>' : '')
+    +'<button class="btn btn-outline btn-sm" onclick="openDetail(\''+r.id+'\')">Full Detail</button>'
+    +'</div></div>';
 }
 function stageTrack(r){
   const done=(r.overallStatus||'').indexOf('Rejected')===0;
   const idx=STAGE_ORDER.indexOf(r.stage);
+  const skipHodPurchase = r.approvalTrack==='Fast';
   return '<div class="stage-track">'+STAGE_ORDER.map((s,i)=>{
     let cls='stage-chip';
-    if(done && i===idx) cls+=' rejected';
+    if(skipHodPurchase && (s==='FleetHOD'||s==='Purchase')) cls+=' skipped';
+    else if(done && i===idx) cls+=' rejected';
     else if(i<idx || (i===idx && s==='Done')) cls+=' done';
     else if(i===idx) cls+=' current';
     return '<div class="'+cls+'">'+(STAGE_LABEL[s]||s)+'</div>';
@@ -732,14 +966,14 @@ function autofillVendorField(prefix){
 
 function openStageModal(id,stageKey){
   const row=allData.find(d=>d.id===id);if(!row)return;
-  editId=id;
+  editId=id;editType='fleet';
   const cfg=STAGES[stageKey];
   $('edit-modal-title').textContent=(STAGE_LABEL[stageKey]||stageKey)+' — '+row.vehicleNo;
   $('edit-modal-body').innerHTML=
     '<div style="background:var(--surface2);border:1px solid var(--border);padding:12px;margin-bottom:16px;font-size:13px;color:var(--muted2)"><strong style="color:var(--text)">COMPLAINT:</strong> '+row.complaint+'</div>'
     +'<div class="form-grid">'+cfg.fields.map(f=>fieldHtml(f,row)).join('')+'</div>'
     +'<div style="display:flex;gap:10px;margin-top:16px">'
-    +'<button class="btn btn-success" onclick="submitStage(\''+stageKey+'\')">✓ '+(stageKey==='Closure'?'CLOSE REQUEST':'APPROVE & FORWARD TO '+(STAGE_LABEL[cfg.next]||cfg.next).toUpperCase())+'</button>'
+    +'<button class="btn btn-success" id="stage-submit-btn" onclick="submitStage(\''+stageKey+'\')">✓ APPROVE & FORWARD</button>'
     +'<button class="btn btn-outline" onclick="closeModal(\'edit-modal\')">CANCEL</button>'
     +'</div>';
   $('edit-modal').classList.add('open');
@@ -748,54 +982,161 @@ async function submitStage(stageKey){
   const cfg=STAGES[stageKey];
   const row=allData.find(d=>d.id===editId);
   const upd={...row};
+  const vals={};
   for(const f of cfg.fields){
     const el=$('sf-'+f.id);
     if(f.req && el && !el.value.trim()){toast(f.label+' required','error');return;}
-    if(el) upd[f.id]=el.value;
+    if(el){upd[f.id]=el.value;vals[f.id]=el.value;}
   }
+  const btn=$('stage-submit-btn'); if(btn) btn.disabled=true;
   const logs=sl(row.logs);
-  if(stageKey==='Closure'){
-    upd.closureAdmId=user.userId;upd.closureAdmName=user.name;upd.closureDate=new Date().toISOString().split('T')[0];
-    upd.closureStatus='Closed';upd.stage='Done';upd.overallStatus='Closed — Awaiting Invoice Hardcopy';
-    upd.hardcopyStatus=upd.hardcopyStatus||'Pending';
-    logs.push({ts:new Date().toISOString(),by:user.name+' ('+user.role+')',note:'Work closed. Invoice: '+(upd.closureInvoiceNo||'—')});
-  }else{
-    upd[cfg.selfRole==='ADM'?'admId':cfg.selfRole==='DM'?'dmId':cfg.selfRole==='FleetManager'?'fleetManagerId':cfg.selfRole==='FleetHOD'?'fleetHodId':cfg.selfRole==='Purchase'?'purchaseId':'accountId']=user.userId;
-    upd[cfg.selfRole==='ADM'?'admName':cfg.selfRole==='DM'?'dmName':cfg.selfRole==='FleetManager'?'fleetManagerName':cfg.selfRole==='FleetHOD'?'fleetHodName':cfg.selfRole==='Purchase'?'purchaseName':'accountName']=user.name;
-    upd[cfg.selfRole==='ADM'?'admDate':cfg.selfRole==='DM'?'dmDate':cfg.selfRole==='FleetManager'?'fleetManagerDate':cfg.selfRole==='FleetHOD'?'fleetHodDate':cfg.selfRole==='Purchase'?'purchaseDate':'accountDate']=new Date().toISOString().split('T')[0];
-    const statusField=cfg.selfRole==='DM'?'dmApproval':cfg.selfRole==='FleetManager'?'fleetManagerStatus':cfg.selfRole==='FleetHOD'?'fleetHodStatus':cfg.selfRole==='Purchase'?'purchaseStatus':cfg.selfRole==='Account'?'accountStatus':null;
-    if(statusField)upd[statusField]='Approved';
-    upd.stage=cfg.next;
-    upd.overallStatus='Pending '+(STAGE_LABEL[cfg.next]||cfg.next)+' Review';
-    upd.rejectedReason='';
-    logs.push({ts:new Date().toISOString(),by:user.name+' ('+user.role+')',note:'Approved & forwarded to '+(STAGE_LABEL[cfg.next]||cfg.next)});
+  const nextStage=cfg.next(row,vals);
+  const prefix=STAGE_FIELD_PREFIX[stageKey];
+  upd[prefix+'Id']=user.userId; upd[prefix+'Name']=user.name; upd[prefix+'Date']=nowDate();
+  const statusField=STATUS_FIELD_MAP[stageKey];
+  if(statusField) upd[statusField]='Approved';
+  if(stageKey==='FleetDesk'){
+    upd.approvalTrack = nextStage==='Account' ? 'Fast' : 'Full';
   }
+  upd.stage=nextStage;
+  upd.assignedTo=''; // clear specific-person routing once it moves forward
+  upd.overallStatus='Pending '+(STAGE_LABEL[nextStage]||nextStage)+' Review';
+  upd.rejectedReason='';
+  logs.push({ts:new Date().toISOString(),by:user.name+' ('+user.role+')',note:'Approved & forwarded to '+(STAGE_LABEL[nextStage]||nextStage)+(upd.approvalTrack==='Fast'?' — Fast-tracked, ≤₹3K':'')});
   upd.logs=JSON.stringify(logs);
   const r=await updateData(upd);
+  if(btn) btn.disabled=false;
   if(r&&r.success){toast('Submitted ✓');closeModal('edit-modal');await loadData();}
   else toast('Failed: '+(r&&r.error||''),'error');
 }
 
-function openReject(id,stageKey){
-  editId=id;
-  $('edit-modal-title').textContent='REJECT / SEND BACK';
+// ---- Account: mark payment (not an "approval") ----
+function openAccountModal(id){
+  const row=allData.find(d=>d.id===id);if(!row)return;
+  editId=id;editType='fleet';
+  $('edit-modal-title').textContent='ACCOUNT — RECORD PAYMENT — '+row.vehicleNo;
   $('edit-modal-body').innerHTML=
-    '<div class="form-group"><label class="form-label req">Reason for rejection / what needs correction</label><textarea id="rj-reason" style="min-height:100px"></textarea></div>'
-    +'<div style="display:flex;gap:10px"><button class="btn btn-danger" onclick="submitReject(\''+stageKey+'\')">✕ SEND BACK TO ADM</button><button class="btn btn-outline" onclick="closeModal(\'edit-modal\')">CANCEL</button></div>';
+    '<div class="form-grid">'
+    +'<div class="form-group"><label class="form-label req">Final Payable Amount (Rs)</label><input type="number" id="ac-final" value="'+(row.accountFinalAmount||amountForRow(row)||'')+'"></div>'
+    +'<div class="form-group"><label class="form-label req">Payment Status</label><select id="ac-status"><option>Not Paid</option><option>Partially Paid</option><option>Paid</option></select></div>'
+    +'<div class="form-group"><label class="form-label">Payment Type</label><select id="ac-type"><option>Full</option><option>Partial</option></select></div>'
+    +'<div class="form-group"><label class="form-label">Amount Paid Now (Rs)</label><input type="number" id="ac-paid" value="'+(row.paidAmount||'')+'"></div>'
+    +'<div class="form-group"><label class="form-label">Payment Date</label><input type="date" id="ac-date" value="'+nowDate()+'"></div>'
+    +'<div class="form-group span2"><label class="form-label">Account Remarks</label><textarea id="ac-remarks">'+(row.accountRemarks||'')+'</textarea></div>'
+    +'</div>'
+    +'<div class="info-banner">"Not Paid" keeps this request at Account for follow-up. "Paid" or "Partially Paid" forwards it to Invoice Desk.</div>'
+    +'<div style="display:flex;gap:10px;margin-top:6px"><button class="btn btn-success" id="ac-submit-btn" onclick="submitAccount()">✓ SAVE</button><button class="btn btn-outline" onclick="closeModal(\'edit-modal\')">CANCEL</button></div>';
   $('edit-modal').classList.add('open');
+}
+async function submitAccount(){
+  const row=allData.find(d=>d.id===editId);
+  const finalAmt=$('ac-final').value, status=$('ac-status').value, paidAmt=$('ac-paid').value||'0';
+  if(!finalAmt){toast('Final payable amount required','error');return;}
+  const btn=$('ac-submit-btn'); if(btn) btn.disabled=true;
+  const logs=sl(row.logs);
+  const upd={...row,
+    accountId:user.userId,accountName:user.name,accountDate:nowDate(),
+    accountFinalAmount:finalAmt,accountPaidStatus:status,paymentType:$('ac-type').value,
+    paidAmount:paidAmt,remainingAmount:String(Math.max(0,parseFloat(finalAmt)-parseFloat(paidAmt||0))),
+    paymentDate:$('ac-date').value,accountRemarks:$('ac-remarks').value,accountStatus:'Reviewed'
+  };
+  if(status==='Not Paid'){
+    upd.overallStatus='Pending Account — Payment Not Yet Made';
+    logs.push({ts:new Date().toISOString(),by:user.name+' (Account)',note:'Payment recorded as Not Paid. Held at Account.'});
+  }else{
+    upd.stage='InvoiceDesk';upd.assignedTo='';
+    upd.overallStatus='Pending Invoice Desk — Closure 1';
+    logs.push({ts:new Date().toISOString(),by:user.name+' (Account)',note:status+' — Rs'+paidAmt+' paid. Forwarded to Invoice Desk.'});
+  }
+  upd.logs=JSON.stringify(logs);
+  const r=await updateData(upd);
+  if(btn) btn.disabled=false;
+  if(r&&r.success){toast('Saved ✓');closeModal('edit-modal');await loadData();}
+  else toast('Failed: '+(r&&r.error||''),'error');
+}
+
+// ---- Invoice Desk Closure 1: invoice upload + OTR parts received check ----
+function openInvoiceDeskModal(id){
+  const row=allData.find(d=>d.id===id);if(!row)return;
+  editId=id;editType='fleet';
+  $('edit-modal-title').textContent='INVOICE DESK — CLOSURE 1 — '+row.vehicleNo;
+  const showOtrCheck = !!row.otrRequestId;
+  $('edit-modal-body').innerHTML=
+    '<div class="form-grid">'
+    +'<div class="form-group span2"><label class="form-label req">Final Invoice Copy (link)</label><input type="text" id="id1-invoice" placeholder="Drive link to uploaded invoice" value="'+(row.finalInvoiceCopy||'')+'"></div>'
+    +'<div class="form-group"><label class="form-label">Invoice No.</label><input type="text" id="id1-invoiceno" value="'+(row.closureInvoiceNo||'')+'"></div>'
+    +(showOtrCheck?'<div class="form-group"><label class="form-label">OTR Part Received?</label><select id="id1-parts"><option>Yes</option><option>No</option></select></div>':'')
+    +'<div class="form-group span2"><label class="form-label">Remarks</label><textarea id="id1-remarks">'+(row.closure1Remarks||'')+'</textarea></div>'
+    +'</div>'
+    +'<div style="display:flex;gap:10px;margin-top:6px"><button class="btn btn-success" id="id1-submit-btn" onclick="submitInvoiceDesk1()">✓ CLOSE 1 — MOVE TO HARDCOPY TRACKING</button><button class="btn btn-outline" onclick="closeModal(\'edit-modal\')">CANCEL</button></div>';
+  $('edit-modal').classList.add('open');
+}
+async function submitInvoiceDesk1(){
+  const row=allData.find(d=>d.id===editId);
+  const invoice=$('id1-invoice').value.trim();
+  if(!invoice){toast('Invoice copy link required','error');return;}
+  const btn=$('id1-submit-btn'); if(btn) btn.disabled=true;
+  const logs=sl(row.logs);
+  const otrEl=$('id1-parts');
+  const upd={...row,
+    invoiceDeskId:user.userId,invoiceDeskName:user.name,closure1Date:nowDate(),
+    finalInvoiceCopy:invoice,closureInvoiceNo:$('id1-invoiceno').value,
+    otrPartsReceived:otrEl?otrEl.value:'NA',closure1Remarks:$('id1-remarks').value,
+    stage:'InvoiceDesk2',assignedTo:'',
+    overallStatus:'Closed — Invoice Uploaded, Awaiting Hardcopy',
+    hardcopyStatus:row.hardcopyStatus||'Pending'
+  };
+  logs.push({ts:new Date().toISOString(),by:user.name+' (Invoice Desk)',note:'Closure 1 done — invoice uploaded. Awaiting physical hardcopy.'});
+  upd.logs=JSON.stringify(logs);
+  const r=await updateData(upd);
+  if(btn) btn.disabled=false;
+  if(r&&r.success){toast('Closure 1 done ✓');closeModal('edit-modal');await loadData();}
+  else toast('Failed: '+(r&&r.error||''),'error');
+}
+
+function openReject(id,stageKey){
+  editId=id;editType='fleet';
+  const idx=STAGE_ORDER.indexOf(stageKey);
+  const earlierStages=STAGE_ORDER.slice(0,idx).filter(s=>STAGE_ROLE[s]);
+  const row=allData.find(d=>d.id===id);
+  $('edit-modal-title').textContent='SEND BACK — '+(row?row.vehicleNo:'');
+  $('edit-modal-body').innerHTML=
+    '<div class="form-group"><label class="form-label req">Send back to stage</label><select id="rj-target">'+earlierStages.map(s=>'<option value="'+s+'">'+(STAGE_LABEL[s]||s)+'</option>').join('')+'</select></div>'
+    +'<div class="form-group"><label class="form-label">Send to specific person (optional)</label><select id="rj-person"><option value="">Any '+ (STAGE_LABEL[earlierStages[0]]||'') +' user</option></select></div>'
+    +'<div class="form-group"><label class="form-label req">Reason for rejection / what needs correction</label><textarea id="rj-reason" style="min-height:100px"></textarea></div>'
+    +'<div style="display:flex;gap:10px"><button class="btn btn-danger" id="rj-submit-btn" onclick="submitReject(\''+stageKey+'\')">✕ SEND BACK</button><button class="btn btn-outline" onclick="closeModal(\'edit-modal\')">CANCEL</button></div>';
+  $('rj-target').onchange=()=>populateRejectPersonList(row);
+  populateRejectPersonList(row);
+  $('edit-modal').classList.add('open');
+}
+function populateRejectPersonList(row){
+  const target=$('rj-target').value;
+  const targetRole=STAGE_ROLE[target];
+  const people=(masters.users||[]).filter(u=>u.role===targetRole && (u.status||'Approved')==='Approved');
+  const sel=$('rj-person');
+  sel.innerHTML='<option value="">Any '+(STAGE_LABEL[target]||targetRole)+' user</option>'+people.map(p=>'<option value="'+p.userId+'">'+p.name+' ('+p.userId+')</option>').join('');
+  // default-select the original person who acted at that stage, if we have them on the row
+  if(row){
+    const prefix=STAGE_FIELD_PREFIX[target];
+    const originalId = prefix ? row[prefix+'Id'] : '';
+    if(originalId && people.some(p=>p.userId===originalId)) sel.value=originalId;
+  }
 }
 async function submitReject(stageKey){
   const reason=$('rj-reason').value.trim();
+  const target=$('rj-target').value;
+  const person=$('rj-person').value;
   if(!reason){toast('Reason required','error');return;}
   const row=allData.find(d=>d.id===editId);
-  const cfg=STAGES[stageKey];
+  const btn=$('rj-submit-btn'); if(btn) btn.disabled=true;
   const logs=sl(row.logs);
-  logs.push({ts:new Date().toISOString(),by:user.name+' ('+user.role+')',note:'Rejected / sent back: '+reason});
-  const statusField=stageKey==='DM'?'dmApproval':stageKey==='FleetManager'?'fleetManagerStatus':stageKey==='FleetHOD'?'fleetHodStatus':stageKey==='Purchase'?'purchaseStatus':stageKey==='Account'?'accountStatus':null;
-  const upd={...row,stage:'ADM',overallStatus:'Rejected — Returned for Correction',rejectedReason:reason,logs:JSON.stringify(logs)};
+  logs.push({ts:new Date().toISOString(),by:user.name+' ('+user.role+')',note:'Sent back to '+(STAGE_LABEL[target]||target)+(person?' ('+person+')':'')+': '+reason});
+  const statusField=STATUS_FIELD_MAP[stageKey];
+  const upd={...row,stage:target,assignedTo:person||'',sentBackFrom:stageKey,sentBackTo:target,overallStatus:'Rejected — Returned to '+(STAGE_LABEL[target]||target),rejectedReason:reason,logs:JSON.stringify(logs)};
   if(statusField)upd[statusField]='Rejected';
   const r=await updateData(upd);
-  if(r&&r.success){toast('Sent back to ADM');closeModal('edit-modal');await loadData();}
+  if(btn) btn.disabled=false;
+  if(r&&r.success){toast('Sent back to '+(STAGE_LABEL[target]||target));closeModal('edit-modal');await loadData();}
   else toast('Failed','error');
 }
 
@@ -813,8 +1154,9 @@ function openDetail(id){
     +'<strong style="color:var(--text)">Complaint:</strong> '+(row.complaint||'—')+'<br>'
     +'<strong style="color:var(--text)">Work Details:</strong> '+(row.workDetails||'—')+'<br>'
     +'<strong style="color:var(--text)">Vendor:</strong> '+(row.vendorName||'—')+' | <strong style="color:var(--text)">Estimate:</strong> '+inr(row.estimateAmount)+'<br>'
-    +'<strong style="color:var(--text)">Negotiated (Purchase):</strong> '+inr(row.purchaseNegotiatedAmount)+' | <strong style="color:var(--text)">Fleet Final:</strong> '+inr(row.fleetFinalAmount)+' | <strong style="color:var(--text)">Account Final:</strong> '+inr(row.accountFinalAmount)+'<br>'
-    +'<strong style="color:var(--text)">Closure Invoice No:</strong> '+(row.closureInvoiceNo||'—')+' | <strong style="color:var(--text)">Hardcopy:</strong> '+(row.hardcopyStatus||'Pending')
+    +'<strong style="color:var(--text)">Negotiated (Purchase):</strong> '+inr(row.purchaseNegotiatedAmount)+' | <strong style="color:var(--text)">Fleet Desk Final:</strong> '+inr(row.fleetFinalAmount)+' | <strong style="color:var(--text)">Account Final:</strong> '+inr(row.accountFinalAmount)+'<br>'
+    +'<strong style="color:var(--text)">Payment:</strong> '+(row.accountPaidStatus||'—')+' ('+(row.paymentType||'—')+') — Paid Rs'+(row.paidAmount||'0')+', Remaining Rs'+(row.remainingAmount||'0')+'<br>'
+    +'<strong style="color:var(--text)">Invoice Copy:</strong> '+(row.finalInvoiceCopy?'<a href="'+row.finalInvoiceCopy+'" target="_blank" style="color:var(--blue)">Open</a>':'—')+' | <strong style="color:var(--text)">Invoice No:</strong> '+(row.closureInvoiceNo||'—')+' | <strong style="color:var(--text)">Hardcopy:</strong> '+(row.hardcopyStatus||'Pending')
     +'</div>'
     +'<div style="max-height:220px;overflow-y:auto">'
     +(logs.length?logs.map(l=>'<div class="log-entry"><div class="log-meta">'+l.by+' — '+new Date(l.ts).toLocaleString('en-IN')+'</div><div class="log-text">'+l.note+'</div></div>').join(''):'<p style="color:var(--muted);font-size:13px">No log entries yet.</p>')
@@ -823,9 +1165,11 @@ function openDetail(id){
 }
 
 // ════════════════════════════════
-// FIELD: RAISE + MY REQUESTS
+// FIELD: RAISE BREAKDOWN + MY REQUESTS
 // ════════════════════════════════
+let submitLock=false;
 async function saveEntry(){
+  if(submitLock)return;
   const req=[['f-date','Requirement Date'],['f-regno','Vehicle No'],['f-complaint','Complaint / Requirement'],['f-workdetails','Work Details'],['f-vendorname','Vendor Name'],['f-estimate','Estimate Amount']];
   for(const [id,lbl] of req){if(!$(id).value.trim()){toast(lbl+' required','error');$(id).focus();return;}}
   const veh=vehicleLookup($('f-regno').value.trim());
@@ -842,11 +1186,13 @@ async function saveEntry(){
     bankKYC:g('f-bankkyc'),vendorBankName:g('f-vendorbankname'),vendorBankAccNo:g('f-vendorbankaccno'),
     vendorBankIFSC:g('f-vendorbankifsc'),bankAccHolderName:g('f-bankaccholder'),
     admMedia:g('f-admmedia'),admRemarks:g('f-admremarks'),
-    admId:user.userId,admName:user.name,admDate:new Date().toISOString().split('T')[0],
-    stage:'DM',overallStatus:'Pending DM Review',
+    admId:user.userId,admName:user.name,admDate:nowDate(),
+    stage:'DM',overallStatus:'Pending DM Review',assignedTo:'',accountPaidStatus:'Not Paid',
     logs:JSON.stringify([{ts:new Date().toISOString(),by:user.name+' (ADM)',note:'Request raised & forwarded to DM: '+g('f-complaint').substring(0,80)}])
   };
+  submitLock=true; const btn=$('raise-submit-btn'); if(btn) btn.disabled=true;
   const r=await addData(entry);
+  submitLock=false; if(btn) btn.disabled=false;
   if(r&&r.success){
     toast('Request submitted to DM ✓');
     clearForm();
@@ -858,7 +1204,7 @@ async function saveEntry(){
 }
 function clearForm(){
   ['f-regno','f-zone','f-district','f-cluster','f-baselocation','f-make','f-complaint','f-workdetails','f-typeofwork','f-vendorname','f-estimate','f-recipientname','f-bankkyc','f-vendorbankname','f-vendorbankaccno','f-vendorbankifsc','f-bankaccholder','f-admmedia','f-admremarks'].forEach(id=>{const el=$(id);if(el)el.value='';});
-  $('f-date').value=new Date().toISOString().split('T')[0];
+  $('f-date').value=nowDate();
   $('f-paymentrecipient').value='Vendor (Direct Repairer/Supplier)';
 }
 function renderMyRequests(d){
@@ -879,52 +1225,317 @@ function renderMyRequests(d){
 }
 
 // ════════════════════════════════
-// USER MANAGEMENT (Admin)
+// OTR — parts / spares requirement
+// ════════════════════════════════
+let otrRowSeq=0;
+function addOtrItemRow(item){
+  otrRowSeq++;
+  const tb=$('otr-items-tbody');
+  const tr=document.createElement('tr');
+  tr.dataset.rid=otrRowSeq;
+  const it=item||{};
+  tr.innerHTML =
+    '<td><input type="text" class="otr-partno" value="'+(it.partNo||'')+'"></td>'
+    +'<td><input type="text" class="otr-partname" value="'+(it.partName||'')+'"></td>'
+    +'<td><input type="number" class="otr-qty" value="'+(it.qty||'')+'" style="width:70px"></td>'
+    +'<td><input type="text" class="otr-unit" value="'+(it.unit||'')+'" style="width:70px"></td>'
+    +'<td><input type="text" class="otr-remarks" value="'+(it.remarks||'')+'"></td>'
+    +'<td><button class="btn btn-outline btn-sm" onclick="this.closest(\'tr\').remove()">✕</button></td>';
+  tb.appendChild(tr);
+}
+function importOtrExcel(evt){
+  const file=evt.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const wb=XLSX.read(e.target.result,{type:'binary'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
+      let added=0;
+      rows.forEach(row=>{
+        const keys=Object.keys(row).reduce((m,k)=>{m[k.toLowerCase().trim()]=row[k];return m;},{});
+        const partNo=keys['part no']||keys['partno']||keys['part number']||'';
+        const partName=keys['part name']||keys['partname']||keys['description']||'';
+        const qty=keys['qty']||keys['quantity']||'';
+        const unit=keys['unit']||'';
+        const remarks=keys['remarks']||keys['remark']||'';
+        if(partNo||partName){addOtrItemRow({partNo,partName,qty,unit,remarks});added++;}
+      });
+      toast(added+' part line(s) imported from Excel');
+    }catch(err){
+      toast('Could not read that file — check it matches the Part No/Part Name/Qty/Unit/Remarks columns','error');
+    }
+  };
+  reader.readAsBinaryString(file);
+  evt.target.value='';
+}
+function collectOtrItems(){
+  const rows=[...document.querySelectorAll('#otr-items-tbody tr')];
+  return rows.map(tr=>({
+    partNo:tr.querySelector('.otr-partno').value.trim(),
+    partName:tr.querySelector('.otr-partname').value.trim(),
+    qty:tr.querySelector('.otr-qty').value.trim(),
+    unit:tr.querySelector('.otr-unit').value.trim(),
+    remarks:tr.querySelector('.otr-remarks').value.trim()
+  })).filter(it=>it.partNo||it.partName);
+}
+let otrSubmitLock=false;
+async function saveOtrEntry(){
+  if(otrSubmitLock)return;
+  if(!$('o-date').value||!$('o-regno').value.trim()){toast('Date and Vehicle No required','error');return;}
+  const items=collectOtrItems();
+  if(!items.length){toast('Add at least one part line','error');return;}
+  const veh=vehicleLookup($('o-regno').value.trim());
+  const entry={
+    reqDate:$('o-date').value,vehicleNo:$('o-regno').value.trim(),
+    zone:veh?veh.zone:'',district:veh?veh.district:'',cluster:veh?veh.cluster:'',
+    admId:user.userId,admName:user.name,
+    itemsJson:JSON.stringify(items),remarks:$('o-remarks').value,
+    stage:'FleetDesk',overallStatus:'Pending Fleet Desk Review',assignedTo:'',accountPaidStatus:'Not Paid',
+    logs:JSON.stringify([{ts:new Date().toISOString(),by:user.name+' (ADM)',note:'OTR raised with '+items.length+' part line(s), forwarded to Fleet Desk'}])
+  };
+  otrSubmitLock=true; const btn=$('otr-submit-btn'); if(btn) btn.disabled=true;
+  const r=await addOtrData(entry);
+  otrSubmitLock=false; if(btn) btn.disabled=false;
+  if(r&&r.success){
+    toast('OTR submitted to Fleet Desk ✓');
+    clearOtrForm();
+    await loadData();
+    tab('my-otr');
+  }else toast('Failed: '+(r&&r.error||'unknown'),'error');
+}
+function clearOtrForm(){
+  $('o-date').value=nowDate();$('o-regno').value='';$('o-loc').value='';$('o-remarks').value='';
+  $('otr-items-tbody').innerHTML='';addOtrItemRow();
+}
+function renderMyOtr(d){
+  const list=$('my-otr-list'),em=$('my-otr-empty');
+  if(!list)return;
+  if(!d.length){list.innerHTML='';em.style.display='block';return;}
+  em.style.display='none';
+  list.innerHTML=d.map(r=>{
+    const items=sl(r.itemsJson);
+    return '<div class="approval-card" style="border-left-color:'+(r.stage==='Done'?'var(--green)':'var(--gold)')+'">'
+      +'<div class="approval-hdr"><div><div class="approval-id">'+r.vehicleNo+' — '+fd(r.reqDate)+'</div><div class="approval-meta">'+items.length+' part line(s)</div></div>'+(OTR_STAGE_LABEL[r.stage]?'<span class="badge badge-pending">'+OTR_STAGE_LABEL[r.stage]+'</span>':'')+'</div>'
+      +(r.rejectedReason?'<div class="reject-banner">Returned reason: '+r.rejectedReason+'</div>':'')
+      +'<button class="btn btn-outline btn-sm" onclick="openOtrDetail(\''+r.id+'\')">📋 Full Detail</button></div>';
+  }).join('');
+}
+function openOtrDetail(id){
+  const row=otrData.find(d=>d.id===id);if(!row)return;
+  const items=sl(row.itemsJson);
+  const logs=sl(row.logs);
+  $('log-modal-title').textContent='OTR — '+row.vehicleNo;
+  $('log-modal-body').innerHTML=
+    '<div class="table-wrap" style="margin-bottom:14px"><table><thead><tr><th>Part No</th><th>Part Name</th><th>Qty</th><th>Unit</th><th>Remarks</th></tr></thead><tbody>'
+    +items.map(it=>'<tr><td>'+it.partNo+'</td><td>'+it.partName+'</td><td>'+it.qty+'</td><td>'+it.unit+'</td><td>'+it.remarks+'</td></tr>').join('')
+    +'</tbody></table></div>'
+    +(row.rejectedReason?'<div class="reject-banner">Returned reason: '+row.rejectedReason+'</div>':'')
+    +'<div style="max-height:200px;overflow-y:auto">'
+    +(logs.length?logs.map(l=>'<div class="log-entry"><div class="log-meta">'+l.by+' — '+new Date(l.ts).toLocaleString('en-IN')+'</div><div class="log-text">'+l.note+'</div></div>').join(''):'')
+    +'</div>';
+  $('log-modal').classList.add('open');
+}
+
+// ---- OTR actions for FleetDesk / Purchase / Account / InvoiceDesk ----
+function renderOtrActions(d){
+  const wrap=$('otr-actions-list'),em=$('otr-actions-empty');
+  if(!wrap)return;
+  if(!['FleetDesk','Purchase','Account','InvoiceDesk','Admin'].includes(user.role)){wrap.innerHTML='';em.style.display='block';return;}
+  const pen=d.filter(r=>r.stage===user.role && (!r.assignedTo||r.assignedTo===user.userId));
+  if(!pen.length){wrap.innerHTML='';em.style.display='block';return;}
+  em.style.display='none';
+  wrap.innerHTML=pen.map(r=>{
+    const items=sl(r.itemsJson);
+    let actionBtn='';
+    if(user.role==='FleetDesk') actionBtn='<button class="btn btn-success btn-sm" onclick="openOtrStageModal(\''+r.id+'\',\'FleetDesk\')">✓ APPROVE & FORWARD TO PURCHASE</button>';
+    else if(user.role==='Purchase') actionBtn='<button class="btn btn-success btn-sm" onclick="openOtrStageModal(\''+r.id+'\',\'Purchase\')">✓ PROCURED — FORWARD TO ACCOUNT</button>';
+    else if(user.role==='Account') actionBtn='<button class="btn btn-success btn-sm" onclick="openOtrAccountModal(\''+r.id+'\')">💳 RECORD PAYMENT</button>';
+    else if(user.role==='InvoiceDesk') actionBtn = r.stage==='InvoiceDesk' ? '<button class="btn btn-success btn-sm" onclick="openOtrInvoiceModal(\''+r.id+'\')">🧾 CLOSURE 1</button>' : '';
+    return '<div class="approval-card"><div class="approval-hdr"><div><div class="approval-id">'+r.vehicleNo+'</div><div class="approval-meta">'+fd(r.reqDate)+' | '+items.length+' part line(s) | Raised by '+(r.admName||'—')+'</div></div>'+(OTR_STAGE_LABEL[r.stage]?'<span class="badge badge-pending">'+OTR_STAGE_LABEL[r.stage]+'</span>':'')+'</div>'
+      +'<div class="approval-actions">'+actionBtn
+      +(user.role!=='Account'?'<button class="btn btn-danger btn-sm" onclick="openOtrReject(\''+r.id+'\')">✕ SEND BACK</button>':'')
+      +'<button class="btn btn-outline btn-sm" onclick="openOtrDetail(\''+r.id+'\')">Full Detail</button></div></div>';
+  }).join('');
+}
+function openOtrStageModal(id,stageKey){
+  const row=otrData.find(d=>d.id===id);if(!row)return;
+  editId=id;editType='otr';
+  const isFleetDesk=stageKey==='FleetDesk';
+  $('edit-modal-title').textContent=(OTR_STAGE_LABEL[stageKey]||stageKey)+' — '+row.vehicleNo;
+  $('edit-modal-body').innerHTML='<div class="form-grid">'
+    +(isFleetDesk?'<div class="form-group span2"><label class="form-label">Fleet Desk Remarks</label><textarea id="otr-sf-remarks">'+(row.fleetDeskRemarks||'')+'</textarea></div>'
+      :'<div class="form-group"><label class="form-label">Vendor</label><input list="vendor-list-raise" id="otr-sf-vendor" value="'+(row.purchaseVendor||'')+'"></div>'
+       +'<div class="form-group"><label class="form-label">Amount (Rs)</label><input type="number" id="otr-sf-amount" value="'+(row.purchaseAmount||'')+'"></div>'
+       +'<div class="form-group span2"><label class="form-label">Purchase Remarks</label><textarea id="otr-sf-remarks">'+(row.purchaseRemarks||'')+'</textarea></div>')
+    +'</div><div style="display:flex;gap:10px;margin-top:10px"><button class="btn btn-success" onclick="submitOtrStage(\''+stageKey+'\')">✓ FORWARD</button><button class="btn btn-outline" onclick="closeModal(\'edit-modal\')">CANCEL</button></div>';
+  $('edit-modal').classList.add('open');
+}
+async function submitOtrStage(stageKey){
+  const row=otrData.find(d=>d.id===editId);
+  const logs=sl(row.logs);
+  let upd={...row};
+  if(stageKey==='FleetDesk'){
+    upd.fleetDeskId=user.userId;upd.fleetDeskName=user.name;upd.fleetDeskDate=nowDate();upd.fleetDeskStatus='Approved';upd.fleetDeskRemarks=$('otr-sf-remarks').value;
+    upd.stage='Purchase';upd.overallStatus='Pending Purchase';
+    logs.push({ts:new Date().toISOString(),by:user.name+' (Fleet Desk)',note:'OTR approved, forwarded to Purchase'});
+  }else{
+    upd.purchaseId=user.userId;upd.purchaseName=user.name;upd.purchaseDate=nowDate();upd.purchaseStatus='Procured';
+    upd.purchaseVendor=$('otr-sf-vendor').value;upd.purchaseAmount=$('otr-sf-amount').value;upd.purchaseRemarks=$('otr-sf-remarks').value;
+    upd.stage='Account';upd.overallStatus='Pending Account Payment';
+    logs.push({ts:new Date().toISOString(),by:user.name+' (Purchase)',note:'Procured, forwarded to Account'});
+  }
+  upd.assignedTo='';upd.logs=JSON.stringify(logs);
+  const r=await updateOtrData(upd);
+  if(r&&r.success){toast('Forwarded ✓');closeModal('edit-modal');await loadData();}
+  else toast('Failed: '+(r&&r.error||''),'error');
+}
+function openOtrAccountModal(id){
+  const row=otrData.find(d=>d.id===id);if(!row)return;
+  editId=id;editType='otr';
+  $('edit-modal-title').textContent='OTR ACCOUNT — RECORD PAYMENT — '+row.vehicleNo;
+  $('edit-modal-body').innerHTML='<div class="form-grid">'
+    +'<div class="form-group req"><label class="form-label req">Final Amount (Rs)</label><input type="number" id="oac-final" value="'+(row.accountFinalAmount||row.purchaseAmount||'')+'"></div>'
+    +'<div class="form-group"><label class="form-label">Payment Status</label><select id="oac-status"><option>Not Paid</option><option>Partially Paid</option><option>Paid</option></select></div>'
+    +'<div class="form-group"><label class="form-label">Amount Paid Now</label><input type="number" id="oac-paid" value="'+(row.paidAmount||'')+'"></div>'
+    +'<div class="form-group span2"><label class="form-label">Remarks</label><textarea id="oac-remarks">'+(row.accountRemarks||'')+'</textarea></div></div>'
+    +'<div style="display:flex;gap:10px;margin-top:10px"><button class="btn btn-success" onclick="submitOtrAccount()">✓ SAVE</button><button class="btn btn-outline" onclick="closeModal(\'edit-modal\')">CANCEL</button></div>';
+  $('edit-modal').classList.add('open');
+}
+async function submitOtrAccount(){
+  const row=otrData.find(d=>d.id===editId);
+  const finalAmt=$('oac-final').value,status=$('oac-status').value,paid=$('oac-paid').value||'0';
+  if(!finalAmt){toast('Final amount required','error');return;}
+  const logs=sl(row.logs);
+  const upd={...row,accountId:user.userId,accountName:user.name,accountDate:nowDate(),accountFinalAmount:finalAmt,accountPaidStatus:status,paidAmount:paid,remainingAmount:String(Math.max(0,parseFloat(finalAmt)-parseFloat(paid||0))),paymentDate:nowDate(),accountRemarks:$('oac-remarks').value};
+  if(status==='Not Paid'){upd.overallStatus='Pending Account — Not Paid';logs.push({ts:new Date().toISOString(),by:user.name+' (Account)',note:'Marked Not Paid, held at Account'});}
+  else{upd.stage='InvoiceDesk';upd.assignedTo='';upd.overallStatus='Pending Invoice Desk';logs.push({ts:new Date().toISOString(),by:user.name+' (Account)',note:status+' Rs'+paid+', forwarded to Invoice Desk'});}
+  upd.logs=JSON.stringify(logs);
+  const r=await updateOtrData(upd);
+  if(r&&r.success){toast('Saved ✓');closeModal('edit-modal');await loadData();}
+  else toast('Failed','error');
+}
+function openOtrInvoiceModal(id){
+  const row=otrData.find(d=>d.id===id);if(!row)return;
+  editId=id;editType='otr';
+  $('edit-modal-title').textContent='OTR — INVOICE DESK CLOSURE 1 — '+row.vehicleNo;
+  $('edit-modal-body').innerHTML='<div class="form-grid">'
+    +'<div class="form-group span2"><label class="form-label req">Final Invoice Copy (link)</label><input type="text" id="oid-invoice" value="'+(row.finalInvoiceCopy||'')+'"></div>'
+    +'<div class="form-group"><label class="form-label req">Parts Received?</label><select id="oid-parts"><option>Yes</option><option>No</option></select></div>'
+    +'<div class="form-group span2"><label class="form-label">Remarks</label><textarea id="oid-remarks">'+(row.closure1Remarks||'')+'</textarea></div></div>'
+    +'<div style="display:flex;gap:10px;margin-top:10px"><button class="btn btn-success" onclick="submitOtrInvoice()">✓ CLOSE 1</button><button class="btn btn-outline" onclick="closeModal(\'edit-modal\')">CANCEL</button></div>';
+  $('edit-modal').classList.add('open');
+}
+async function submitOtrInvoice(){
+  const row=otrData.find(d=>d.id===editId);
+  const invoice=$('oid-invoice').value.trim();
+  if(!invoice){toast('Invoice link required','error');return;}
+  const logs=sl(row.logs);
+  const upd={...row,invoiceDeskId:user.userId,invoiceDeskName:user.name,closure1Date:nowDate(),finalInvoiceCopy:invoice,partsReceived:$('oid-parts').value,closure1Remarks:$('oid-remarks').value,stage:'InvoiceDesk2',assignedTo:'',overallStatus:'Closed — Awaiting Hardcopy',hardcopyStatus:row.hardcopyStatus||'Pending'};
+  logs.push({ts:new Date().toISOString(),by:user.name+' (Invoice Desk)',note:'OTR Closure 1 done'});
+  upd.logs=JSON.stringify(logs);
+  const r=await updateOtrData(upd);
+  if(r&&r.success){toast('Closed ✓');closeModal('edit-modal');await loadData();}
+  else toast('Failed','error');
+}
+function openOtrReject(id){
+  const row=otrData.find(d=>d.id===id);if(!row)return;
+  editId=id;editType='otr';
+  const idx=OTR_STAGE_ORDER.indexOf(row.stage);
+  const earlier=OTR_STAGE_ORDER.slice(0,idx);
+  $('edit-modal-title').textContent='SEND BACK OTR — '+row.vehicleNo;
+  $('edit-modal-body').innerHTML='<div class="form-group"><label class="form-label req">Send back to</label><select id="orj-target">'+earlier.map(s=>'<option value="'+s+'">'+(OTR_STAGE_LABEL[s]||s)+'</option>').join('')+'</select></div>'
+    +'<div class="form-group"><label class="form-label req">Reason</label><textarea id="orj-reason" style="min-height:100px"></textarea></div>'
+    +'<div style="display:flex;gap:10px"><button class="btn btn-danger" onclick="submitOtrReject()">✕ SEND BACK</button><button class="btn btn-outline" onclick="closeModal(\'edit-modal\')">CANCEL</button></div>';
+  $('edit-modal').classList.add('open');
+}
+async function submitOtrReject(){
+  const reason=$('orj-reason').value.trim(); const target=$('orj-target').value;
+  if(!reason){toast('Reason required','error');return;}
+  const row=otrData.find(d=>d.id===editId);
+  const logs=sl(row.logs);
+  logs.push({ts:new Date().toISOString(),by:user.name+' ('+user.role+')',note:'Sent back to '+(OTR_STAGE_LABEL[target]||target)+': '+reason});
+  const upd={...row,stage:target,overallStatus:'Rejected — Returned to '+(OTR_STAGE_LABEL[target]||target),rejectedReason:reason,logs:JSON.stringify(logs)};
+  const r=await updateOtrData(upd);
+  if(r&&r.success){toast('Sent back');closeModal('edit-modal');await loadData();}
+  else toast('Failed','error');
+}
+
+// ════════════════════════════════
+// USER MANAGEMENT (Admin / Fleet Desk)
 // ════════════════════════════════
 function renderUsersTable(){
   const tb=$('users-tbody'),em=$('users-empty');
   if(!tb)return;
   if(!masters.users.length){tb.innerHTML='';em.style.display='block';return;}
   em.style.display='none';
-  tb.innerHTML=masters.users.map(u=>'<tr><td><strong style="font-family:Rajdhani">'+u.userId+'</strong></td><td>'+u.name+'</td><td>'+u.role+'</td><td>'+(u.zone||'—')+'</td><td>'+(u.district||'—')+'</td></tr>').join('');
+  tb.innerHTML=masters.users.map(u=>{
+    const status=u.status||'Approved';
+    const badge = status==='Approved'?'<span class="badge badge-approved">Approved</span>':status==='Pending'?'<span class="badge badge-pending">Pending</span>':'<span class="badge badge-rejected">Rejected</span>';
+    return '<tr><td><strong style="font-family:Rajdhani">'+u.userId+'</strong></td><td>'+u.name+'</td><td>'+(ROLE_META[u.role]?ROLE_META[u.role].label:u.role)+'</td><td>'+(u.zone||'—')+'</td><td>'+(u.district||'—')+'</td><td>'+badge+'</td>'
+      +'<td><button class="btn btn-outline btn-sm" onclick="resetPin(\''+u.userId+'\')">Reset PIN</button></td></tr>';
+  }).join('');
+}
+function renderPending(){
+  const wrap=$('pending-list'),em=$('pending-empty');
+  const pend=(masters.users||[]).filter(u=>(u.status||'Approved')==='Pending');
+  if(!pend.length){wrap.innerHTML='';em.style.display='block';return;}
+  em.style.display='none';
+  wrap.innerHTML=pend.map(u=>'<div class="pending-row"><div><strong>'+u.name+'</strong> — '+u.userId+' · '+(ROLE_META[u.role]?ROLE_META[u.role].label:u.role)+' · '+(u.email||'no email')+'</div>'
+    +'<div style="display:flex;gap:8px"><button class="btn btn-success btn-sm" onclick="approveSignup(\''+u.userId+'\')">Approve</button><button class="btn btn-danger btn-sm" onclick="rejectSignup(\''+u.userId+'\')">Reject</button></div></div>').join('');
+}
+async function approveSignup(userId){
+  loading(true);const r=await call({action:'approveUser',userId:userId,approverRole:user.role});loading(false);
+  if(r&&r.success){toast('Approved ✓');await loadData();}else toast('Failed: '+(r&&r.error||''),'error');
+}
+async function rejectSignup(userId){
+  loading(true);const r=await call({action:'rejectUser',userId:userId});loading(false);
+  if(r&&r.success){toast('Rejected');await loadData();}else toast('Failed','error');
+}
+async function resetPin(userId){
+  loading(true);const r=await call({action:'resetUserPin',userId:userId,approverRole:user.role});loading(false);
+  if(r&&r.success){toast('New PIN for '+userId+': '+r.newPin,'info');}else toast('Failed: '+(r&&r.error||''),'error');
 }
 async function createUser(){
   const req=[['u-id','User ID'],['u-name','Name'],['u-pin','PIN']];
   for(const [id,lbl] of req){if(!$(id).value.trim()){toast(lbl+' required','error');$(id).focus();return;}}
+  const email=$('u-email').value.trim();
+  if(email && !email.toLowerCase().endsWith('@'+ALLOWED_EMAIL_DOMAIN)){toast('Email must be @'+ALLOWED_EMAIL_DOMAIN,'error');return;}
   if(masters.users.some(u=>u.userId===$('u-id').value.trim())){toast('That User ID already exists','error');return;}
-  const data={userId:$('u-id').value.trim(),name:$('u-name').value.trim(),role:$('u-role').value,pin:$('u-pin').value.trim(),zone:$('u-zone').value.trim(),district:$('u-district').value.trim()};
+  const data={userId:$('u-id').value.trim(),name:$('u-name').value.trim(),role:$('u-role').value,pin:$('u-pin').value.trim(),email:email,zone:$('u-zone').value.trim(),district:$('u-district').value.trim()};
   loading(true);
-  const r=await call({action:'addUser',data:data});
+  const r=await call({action:'addUser',data:data,approverRole:user.role});
   loading(false);
   if(r&&r.success){
     toast('ID created ✓');
-    ['u-id','u-name','u-pin','u-zone','u-district'].forEach(id=>$(id).value='');
+    ['u-id','u-name','u-pin','u-email','u-zone','u-district'].forEach(id=>$(id).value='');
     await loadData();
   }else toast('Failed: '+(r&&r.error||''),'error');
 }
 
 // ════════════════════════════════
-// INVOICE HARDCOPY FOLLOW-UP
+// INVOICE HARDCOPY — Closure 2 (Invoice Desk only)
 // ════════════════════════════════
 function renderHardcopy(d){
-  const closed=d.filter(x=>x.stage==='Done');
+  const closed=d.filter(x=>x.stage==='InvoiceDesk2'||x.stage==='Done');
   const tb=$('hardcopy-tbody'),em=$('hardcopy-empty');
   if(!closed.length){tb.innerHTML='';em.style.display='block';return;}
   em.style.display='none';
   tb.innerHTML=closed.map((r,i)=>{
     const status=r.hardcopyStatus||'Pending';
-    return '<tr><td>'+(i+1)+'</td><td>'+fd(r.closureDate)+'</td><td><strong style="font-family:Rajdhani">'+r.vehicleNo+'</strong></td><td>'+(r.vendorName||'—')+'</td>'
+    const canAct = user.role==='InvoiceDesk' && r.stage==='InvoiceDesk2';
+    return '<tr><td>'+(i+1)+'</td><td>'+fd(r.closure1Date||r.closureDate)+'</td><td><strong style="font-family:Rajdhani">'+r.vehicleNo+'</strong></td><td>'+(r.vendorName||'—')+'</td>'
       +'<td>'+(r.closureInvoiceNo||'—')+'</td><td>'+inr(amountForRow(r))+'</td>'
       +'<td>'+(r.hardcopyBatch||'—')+'</td>'
       +'<td>'+(status==='Received'?'<span class="badge badge-approved">Received</span>':'<span class="badge badge-pending">Pending</span>')+'</td>'
       +'<td>'+(r.hardcopyFollowupDate?fd(r.hardcopyFollowupDate):'—')+'</td>'
-      +'<td><button class="btn btn-outline btn-sm" onclick="openHardcopy(\''+r.id+'\')">Update</button></td></tr>';
+      +'<td>'+(canAct?'<button class="btn btn-outline btn-sm" onclick="openHardcopy(\''+r.id+'\')">Update</button>':'<span style="color:var(--muted);font-size:11px">View only</span>')+'</td></tr>';
   }).join('');
 }
 function openHardcopy(id){
   const row=allData.find(d=>d.id===id);if(!row)return;
-  editId=id;
-  $('edit-modal-title').textContent='INVOICE HARDCOPY — '+row.vehicleNo;
+  editId=id;editType='fleet';
+  $('edit-modal-title').textContent='CLOSURE 2 — HARDCOPY — '+row.vehicleNo;
   $('edit-modal-body').innerHTML=
     '<div class="form-grid-2">'
     +'<div class="form-group"><label class="form-label">Status</label><select id="hc-status"><option '+((row.hardcopyStatus||'Pending')==='Pending'?'selected':'')+'>Pending</option><option '+(row.hardcopyStatus==='Received'?'selected':'')+'>Received</option></select></div>'
@@ -937,7 +1548,12 @@ function openHardcopy(id){
 }
 async function submitHardcopy(){
   const row=allData.find(d=>d.id===editId);
-  const upd={...row,hardcopyStatus:$('hc-status').value,hardcopyBatch:$('hc-batch').value,hardcopyFollowupDate:$('hc-date').value,hardcopyRemarks:$('hc-rem').value};
+  const status=$('hc-status').value;
+  const upd={...row,hardcopyStatus:status,hardcopyBatch:$('hc-batch').value,hardcopyFollowupDate:$('hc-date').value,hardcopyRemarks:$('hc-rem').value};
+  if(status==='Received'){
+    upd.stage='Done';upd.overallStatus='Closed & Hardcopy Received';
+    const logs=sl(row.logs);logs.push({ts:new Date().toISOString(),by:user.name+' (Invoice Desk)',note:'Closure 2 done — hardcopy received. Request fully closed.'});upd.logs=JSON.stringify(logs);
+  }
   const r=await updateData(upd);
   if(r&&r.success){toast('Updated ✓');closeModal('edit-modal');await loadData();}
   else toast('Failed','error');
@@ -953,7 +1569,7 @@ function renderCharts(d){
   const ml=mk.map(x=>{const[y,mo]=x.split('-');return['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(mo)]+' '+y.slice(2);});
   bChart('chart-monthly','bar',ml,[{label:'Estimate',data:mk.map(k=>m[k].e),backgroundColor:'rgba(245,166,35,0.7)',borderColor:'#f5a623',borderWidth:1.5,borderRadius:3},{label:'Final Amount',data:mk.map(k=>m[k].i),backgroundColor:'rgba(59,130,246,0.7)',borderColor:'#3b82f6',borderWidth:1.5,borderRadius:3}],'Rs',true);
   const stageCounts=STAGE_ORDER.map(s=>d.filter(x=>x.stage===s).length);
-  bChart('chart-status','doughnut',STAGE_ORDER.map(s=>STAGE_LABEL[s]),[{data:stageCounts,backgroundColor:['#e63946','#f5a623','#3b82f6','#8b5cf6','#06b6d4','#00c67a','#f97316','#5a7296'],borderWidth:0}],null,true);
+  bChart('chart-status','doughnut',STAGE_ORDER.map(s=>STAGE_LABEL[s]),[{data:stageCounts,backgroundColor:['#e63946','#f5a623','#3b82f6','#8b5cf6','#06b6d4','#00c67a','#f97316','#c1121f','#5a7296'],borderWidth:0}],null,true);
   const co={};d.forEach(x=>{let k=(x.complaint||'').split('—')[0].trim().substring(0,22)||'Other';co[k]=(co[k]||0)+1;});
   const tc=Object.entries(co).sort((a,b)=>b[1]-a[1]).slice(0,7);
   bChart('chart-complaint','bar',tc.map(x=>x[0]),[{data:tc.map(x=>x[1]),backgroundColor:['#e63946','#f5a623','#3b82f6','#00c67a','#8b5cf6','#06b6d4','#f97316'],borderRadius:3}],null,false);
@@ -1002,15 +1618,30 @@ function genReport(){
 function expRpt(){expCSV(window._rd||[],'fleet_report');}
 function exportCSV(){expCSV(filteredData,'fleet_data');}
 function expCSV(data,fn){
-  const h=['Requirement Date','Vehicle No','Zone','District','Cluster','Base Location','Vehicle Make','Raised By','Complaint','Work Details','Type of Work','Vendor Name','Estimate Amount','Payment Recipient','Recipient Name','Bank KYC','Vendor Bank Name','Vendor Bank Acc No','Vendor Bank IFSC','Account Holder Name','Fleet Final Amount','Purchase Negotiated Amount','Account Final Amount','Closure Invoice No','Stage','Overall Status','Hardcopy Status'];
-  const k=['reqDate','vehicleNo','zone','district','cluster','baseLocation','vehicleMake','raisedBy','complaint','workDetails','typeOfWork','vendorName','estimateAmount','paymentRecipient','recipientName','bankKYC','vendorBankName','vendorBankAccNo','vendorBankIFSC','bankAccHolderName','fleetFinalAmount','purchaseNegotiatedAmount','accountFinalAmount','closureInvoiceNo','stage','overallStatus','hardcopyStatus'];
+  const h=['Requirement Date','Vehicle No','Zone','District','Cluster','Base Location','Vehicle Make','Raised By','Complaint','Work Details','Type of Work','Vendor Name','Estimate Amount','Payment Recipient','Recipient Name','Bank KYC','Vendor Bank Name','Vendor Bank Acc No','Vendor Bank IFSC','Account Holder Name','Fleet Desk Final Amount','Purchase Negotiated Amount','Account Final Amount','Payment Status','Paid Amount','Closure Invoice No','Track','Stage','Overall Status','Hardcopy Status'];
+  const k=['reqDate','vehicleNo','zone','district','cluster','baseLocation','vehicleMake','raisedBy','complaint','workDetails','typeOfWork','vendorName','estimateAmount','paymentRecipient','recipientName','bankKYC','vendorBankName','vendorBankAccNo','vendorBankIFSC','bankAccHolderName','fleetFinalAmount','purchaseNegotiatedAmount','accountFinalAmount','accountPaidStatus','paidAmount','closureInvoiceNo','approvalTrack','stage','overallStatus','hardcopyStatus'];
   const csv=[h.join(','),...data.map(r=>k.map(x=>'"'+((r[x]||'').toString().replace(/"/g,'""'))+'"').join(','))].join('\n');
   const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);a.download=fn+'_'+new Date().toISOString().split('T')[0]+'.csv';a.click();
 }
 
-['edit-modal','log-modal'].forEach(id=>{
+// ════════════════════════════════
+// CONNECTIVITY INDICATOR
+// ════════════════════════════════
+function updateConnPill(){
+  const pill=$('conn-pill'); if(!pill) return;
+  isOnline=navigator.onLine;
+  pill.classList.toggle('offline',!isOnline);
+  $('conn-label').textContent=isOnline?'Online':'Offline — showing cached data';
+}
+window.addEventListener('online',updateConnPill);
+window.addEventListener('offline',updateConnPill);
+
+['edit-modal','log-modal','signup-modal','forgot-modal'].forEach(id=>{
   $(id).addEventListener('click',function(e){if(e.target===this)closeModal(id);});
 });
+
+buildRoleGrid();
+updateConnPill();
 </script>
 </body>
 </html>
