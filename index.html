@@ -162,7 +162,7 @@ tr:last-child td{border-bottom:none;}tr:hover td{background:rgba(255,255,255,.02
 <div class="login-card" id="login-card">
   <div class="login-org">Sumeet Facilities Ltd · Maharashtra</div>
   <div class="login-title">108 FLEET SYSTEM</div>
-  <div class="login-sub">ADM → DM → Fleet Desk → (Fleet HOD → Purchase) → Account → Invoice Desk</div>
+  <div class="login-sub">ADM → DM → Field Fleet Manager → Fleet Desk → (Fleet HOD → Purchase) → Account → Invoice Desk</div>
   <div class="form-group">
     <div class="form-label">Select Your Role</div>
     <div class="role-grid" id="login-role-grid"></div>
@@ -474,6 +474,7 @@ const ROLE_META = {
   Admin:      {label:'Admin',       icon:'🛡'},
   ADM:        {label:'ADM',         icon:'📋'},
   DM:         {label:'DM',          icon:'🗂'},
+  FieldFleetManager: {label:'Field Fleet Manager', icon:'🧭'},
   FleetDesk:  {label:'Fleet Desk',  icon:'🏢'},
   FleetHOD:   {label:'Fleet HOD',   icon:'🎖'},
   Purchase:   {label:'Purchase',    icon:'🛒'},
@@ -483,14 +484,14 @@ const ROLE_META = {
 const ALL_ROLES = Object.keys(ROLE_META);
 const SIGNUP_ROLES = ALL_ROLES.filter(r=>r!=='Admin'); // Admin ID created manually in sheet only
 
-const STAGE_ORDER = ['ADM','DM','FleetDesk','FleetHOD','Purchase','Account','InvoiceDesk','InvoiceDesk2','Done'];
-const STAGE_LABEL = {ADM:'ADM Review',DM:'DM Approval',FleetDesk:'Fleet Desk',FleetHOD:'Fleet HOD',Purchase:'Purchase',Account:'Account (Payment)',InvoiceDesk:'Invoice Desk',InvoiceDesk2:'Invoice Desk (Hardcopy)',Done:'Closed'};
+const STAGE_ORDER = ['ADM','DM','FieldFleetManager','FleetDesk','FleetHOD','Purchase','Account','InvoiceDesk','InvoiceDesk2','Done'];
+const STAGE_LABEL = {ADM:'ADM Review',DM:'DM Approval',FieldFleetManager:'Field Fleet Manager',FleetDesk:'Fleet Desk',FleetHOD:'Fleet HOD',Purchase:'Purchase',Account:'Account (Payment)',InvoiceDesk:'Invoice Desk',InvoiceDesk2:'Invoice Desk (Hardcopy)',Done:'Closed'};
 // which login role acts at which stage
-const STAGE_ROLE = {ADM:'ADM',DM:'DM',FleetDesk:'FleetDesk',FleetHOD:'FleetHOD',Purchase:'Purchase',Account:'Account',InvoiceDesk:'InvoiceDesk',InvoiceDesk2:'InvoiceDesk'};
+const STAGE_ROLE = {ADM:'ADM',DM:'DM',FieldFleetManager:'FieldFleetManager',FleetDesk:'FleetDesk',FleetHOD:'FleetHOD',Purchase:'Purchase',Account:'Account',InvoiceDesk:'InvoiceDesk',InvoiceDesk2:'InvoiceDesk'};
 // db column prefix for id/name/date fields at each stage
-const STAGE_FIELD_PREFIX = {ADM:'adm',DM:'dm',FleetDesk:'fleetManager',FleetHOD:'fleetHod',Purchase:'purchase',Account:'account',InvoiceDesk:'invoiceDesk'};
+const STAGE_FIELD_PREFIX = {ADM:'adm',DM:'dm',FieldFleetManager:'fieldFleetManager',FleetDesk:'fleetManager',FleetHOD:'fleetHod',Purchase:'purchase',Account:'account',InvoiceDesk:'invoiceDesk'};
 // db column for the "status" of that stage (irregular names kept for backward compatibility)
-const STATUS_FIELD_MAP = {DM:'dmApproval',FleetDesk:'fleetManagerStatus',FleetHOD:'fleetHodStatus',Purchase:'purchaseStatus',Account:'accountStatus'};
+const STATUS_FIELD_MAP = {DM:'dmApproval',FieldFleetManager:'fieldFleetManagerStatus',FleetDesk:'fleetManagerStatus',FleetHOD:'fleetHodStatus',Purchase:'purchaseStatus',Account:'accountStatus'};
 
 const OTR_STAGE_ORDER = ['ADM','FleetDesk','Purchase','Account','InvoiceDesk','InvoiceDesk2','Done'];
 const OTR_STAGE_LABEL = {ADM:'ADM Raised',FleetDesk:'Fleet Desk',Purchase:'Purchase',Account:'Account (Payment)',InvoiceDesk:'Invoice Desk',InvoiceDesk2:'Invoice Desk (Hardcopy)',Done:'Closed'};
@@ -514,6 +515,9 @@ const STAGES = {
   ], next:()=>'DM' },
   DM: { fields:[
       {id:'dmRemarks',label:'DM Remarks',type:'textarea'}
+  ], next:()=>'FieldFleetManager' },
+  FieldFleetManager: { fields:[
+      {id:'fieldFleetManagerRemarks',label:'Field Fleet Manager Remarks',type:'textarea'}
   ], next:()=>'FleetDesk' },
   FleetDesk: { fields:[
       {id:'fleetProcessDate',label:'Process Date',type:'date'},
@@ -861,7 +865,7 @@ function populateFilters(d){
 // ════════════════════════════════
 // ROUTING HELPERS — who should see a row
 // ════════════════════════════════
-const GEO_SCOPED_ROLES = ['ADM','DM']; // roles where district/zone matching matters; desks are centralised
+const GEO_SCOPED_ROLES = ['ADM','DM','FieldFleetManager']; // roles where district/zone matching matters; desks are centralised
 function visibleToMe(r,stageKey){
   if(r.stage!==stageKey) return false;
   if(r.assignedTo && r.assignedTo!==user.userId) return false; // sent back to a specific person, not me
@@ -1569,7 +1573,7 @@ function renderCharts(d){
   const ml=mk.map(x=>{const[y,mo]=x.split('-');return['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(mo)]+' '+y.slice(2);});
   bChart('chart-monthly','bar',ml,[{label:'Estimate',data:mk.map(k=>m[k].e),backgroundColor:'rgba(245,166,35,0.7)',borderColor:'#f5a623',borderWidth:1.5,borderRadius:3},{label:'Final Amount',data:mk.map(k=>m[k].i),backgroundColor:'rgba(59,130,246,0.7)',borderColor:'#3b82f6',borderWidth:1.5,borderRadius:3}],'Rs',true);
   const stageCounts=STAGE_ORDER.map(s=>d.filter(x=>x.stage===s).length);
-  bChart('chart-status','doughnut',STAGE_ORDER.map(s=>STAGE_LABEL[s]),[{data:stageCounts,backgroundColor:['#e63946','#f5a623','#3b82f6','#8b5cf6','#06b6d4','#00c67a','#f97316','#c1121f','#5a7296'],borderWidth:0}],null,true);
+  bChart('chart-status','doughnut',STAGE_ORDER.map(s=>STAGE_LABEL[s]),[{data:stageCounts,backgroundColor:['#e63946','#f5a623','#84cc16','#3b82f6','#8b5cf6','#06b6d4','#00c67a','#f97316','#c1121f','#5a7296'],borderWidth:0}],null,true);
   const co={};d.forEach(x=>{let k=(x.complaint||'').split('—')[0].trim().substring(0,22)||'Other';co[k]=(co[k]||0)+1;});
   const tc=Object.entries(co).sort((a,b)=>b[1]-a[1]).slice(0,7);
   bChart('chart-complaint','bar',tc.map(x=>x[0]),[{data:tc.map(x=>x[1]),backgroundColor:['#e63946','#f5a623','#3b82f6','#00c67a','#8b5cf6','#06b6d4','#f97316'],borderRadius:3}],null,false);
