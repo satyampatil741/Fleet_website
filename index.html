@@ -562,7 +562,8 @@ function nowDate(){return new Date().toISOString().split('T')[0];}
 function stageBadge(r){
   const os=(r.overallStatus||'');
   if(os.indexOf('Rejected — Closed')===0) return '<span class="badge badge-rejected">Rejected — Closed</span>';
-  if(os.indexOf('Rejected')===0) return '<span class="badge badge-rejected">Returned</span>';
+  if(os.indexOf('Sent Back')===0) return '<span class="badge badge-fast">↩ Sent Back — with '+(STAGE_LABEL[r.stage]||r.stage)+'</span>';
+  if(r.stage==='Account' && r.accountPaidStatus==='Partially Paid') return '<span class="badge badge-fast">💰 Advance Paid — Balance Pending</span>';
   if(r.stage==='Done') return '<span class="badge badge-closed">Closed</span>';
   return '<span class="badge badge-pending">'+(STAGE_LABEL[r.stage]||r.stage)+'</span>';
 }
@@ -805,7 +806,7 @@ function myPendingCount(d){
 }
 function updateStats(d){
   const closed=d.filter(x=>x.stage==='Done').length;
-  const rejected=d.filter(x=>(x.overallStatus||'').indexOf('Rejected')===0).length;
+  const rejected=d.filter(x=>{const os=(x.overallStatus||'');return os.indexOf('Rejected')===0||os.indexOf('Sent Back')===0;}).length;
   const repair=d.filter(x=>['FleetDesk','FleetHOD','Purchase','Account','InvoiceDesk','InvoiceDesk2'].includes(x.stage)).length;
   const inv=d.reduce((s,x)=>s+(parseFloat(amountForRow(x))||0),0);
   const hardcopyPending=d.filter(x=>x.stage==='InvoiceDesk2').length;
@@ -935,7 +936,7 @@ function renderActionCard(r){
     +'<div><div class="ab-lbl">Running Amount</div><div class="ab-val sv-red">'+inr(amountForRow(r))+'</div></div>'
     +'</div>'
     +'<div class="approval-actions">'
-    +(isAccount ? '<button class="btn btn-success btn-sm" onclick="openAccountModal(\''+r.id+'\')">💳 RECORD PAYMENT</button>'
+    +(isAccount ? '<button class="btn btn-success btn-sm" onclick="openAccountModal(\''+r.id+'\')">💳 '+(r.accountPaidStatus==='Partially Paid'?'SETTLE BALANCE ('+inr(r.remainingAmount)+')':'RECORD PAYMENT')+'</button>'
       : isInvoiceDesk1 ? '<button class="btn btn-success btn-sm" onclick="openInvoiceDeskModal(\''+r.id+'\')">🧾 CLOSURE 1 — INVOICE</button>'
       : isInvoiceDesk2 ? '<button class="btn btn-success btn-sm" onclick="openHardcopy(\''+r.id+'\')">📦 CLOSURE 2 — HARDCOPY</button>'
       : isGeneric ? '<button class="btn btn-success btn-sm" onclick="openStageModal(\''+r.id+'\',\''+stage+'\')">✓ APPROVE & FORWARD</button>'
@@ -1055,39 +1056,56 @@ async function submitStage(stageKey){
 function openAccountModal(id){
   const row=allData.find(d=>d.id===id);if(!row)return;
   editId=id;editType='fleet';
+  const finalAmt=parseFloat(row.accountFinalAmount||amountForRow(row)||0);
+  const paidSoFar=parseFloat(row.paidAmount||0);
+  const balance=Math.max(0,finalAmt-paidSoFar);
   $('edit-modal-title').textContent='ACCOUNT — RECORD PAYMENT — '+row.vehicleNo;
   $('edit-modal-body').innerHTML=
-    '<div class="form-grid">'
+    (paidSoFar>0?'<div class="info-banner">Already paid so far: <strong>'+inr(paidSoFar)+'</strong> &nbsp;|&nbsp; Balance due: <strong>'+inr(balance)+'</strong></div>':'')
+    +'<div class="form-grid">'
     +'<div class="form-group"><label class="form-label req">Final Payable Amount (Rs)</label><input type="number" id="ac-final" value="'+(row.accountFinalAmount||amountForRow(row)||'')+'"></div>'
-    +'<div class="form-group"><label class="form-label req">Payment Status</label><select id="ac-status"><option>Not Paid</option><option>Partially Paid</option><option>Paid</option></select></div>'
-    +'<div class="form-group"><label class="form-label">Payment Type</label><select id="ac-type"><option>Full</option><option>Partial</option></select></div>'
-    +'<div class="form-group"><label class="form-label">Amount Paid Now (Rs)</label><input type="number" id="ac-paid" value="'+(row.paidAmount||'')+'"></div>'
+    +'<div class="form-group"><label class="form-label req">Payment Type</label><select id="ac-status">'
+      +'<option value="Not Paid">Not Paid — hold, no payment yet</option>'
+      +'<option value="Partially Paid">Partial Payment / Advance — balance remains at Account</option>'
+      +'<option value="Paid">Full &amp; Final Payment — closes out, forwards to Invoice Desk</option>'
+      +'</select></div>'
+    +'<div class="form-group"><label class="form-label">Amount Paid Now (Rs)</label><input type="number" id="ac-paid" placeholder="e.g. advance amount"></div>'
     +'<div class="form-group"><label class="form-label">Payment Date</label><input type="date" id="ac-date" value="'+nowDate()+'"></div>'
     +'<div class="form-group span2"><label class="form-label">Account Remarks</label><textarea id="ac-remarks">'+(row.accountRemarks||'')+'</textarea></div>'
     +'</div>'
-    +'<div class="info-banner">"Not Paid" keeps this request at Account for follow-up. "Paid" or "Partially Paid" forwards it to Invoice Desk.</div>'
+    +'<div class="info-banner">"Not Paid" and "Partial Payment / Advance" both keep this request at Account so the balance can be settled later — it will NOT move to Invoice Desk until "Full &amp; Final Payment" is recorded. Each partial amount you enter here adds to the running total already paid.</div>'
     +'<div style="display:flex;gap:10px;margin-top:6px"><button class="btn btn-success" id="ac-submit-btn" onclick="submitAccount()">✓ SAVE</button><button class="btn btn-outline" onclick="closeModal(\'edit-modal\')">CANCEL</button></div>';
   $('edit-modal').classList.add('open');
 }
 async function submitAccount(){
   const row=allData.find(d=>d.id===editId);
-  const finalAmt=$('ac-final').value, status=$('ac-status').value, paidAmt=$('ac-paid').value||'0';
+  const finalAmt=parseFloat($('ac-final').value||0), status=$('ac-status').value, paidNow=parseFloat($('ac-paid').value||0);
   if(!finalAmt){toast('Final payable amount required','error');return;}
+  if(status!=='Not Paid' && paidNow<=0){toast('Enter the amount paid now','error');return;}
   const btn=$('ac-submit-btn'); if(btn) btn.disabled=true;
   const logs=sl(row.logs);
+  const priorPaid=parseFloat(row.paidAmount||0);
+  const totalPaid = status==='Not Paid' ? priorPaid : priorPaid+paidNow;
+  const remaining = Math.max(0, finalAmt-totalPaid);
+  // if the running total already covers the final amount, treat this as a full & final settlement even if "Partial" was picked by mistake
+  const effectiveStatus = status!=='Not Paid' && remaining<=0 ? 'Paid' : status;
   const upd={...row,
     accountId:user.userId,accountName:user.name,accountDate:nowDate(),
-    accountFinalAmount:finalAmt,accountPaidStatus:status,paymentType:$('ac-type').value,
-    paidAmount:paidAmt,remainingAmount:String(Math.max(0,parseFloat(finalAmt)-parseFloat(paidAmt||0))),
+    accountFinalAmount:String(finalAmt),accountPaidStatus:effectiveStatus,paymentType:effectiveStatus==='Paid'?'Full':'Partial',
+    paidAmount:String(totalPaid),remainingAmount:String(remaining),
     paymentDate:$('ac-date').value,accountRemarks:$('ac-remarks').value,accountStatus:'Reviewed'
   };
-  if(status==='Not Paid'){
+  if(effectiveStatus==='Not Paid'){
     upd.overallStatus='Pending Account — Payment Not Yet Made';
     logs.push({ts:new Date().toISOString(),by:user.name+' (Account)',note:'Payment recorded as Not Paid. Held at Account.'});
+  }else if(effectiveStatus==='Partially Paid'){
+    upd.stage='Account';upd.assignedTo='';
+    upd.overallStatus='Partial Payment Made — Balance '+inr(remaining)+' Pending at Account';
+    logs.push({ts:new Date().toISOString(),by:user.name+' (Account)',note:'Advance/Partial payment of Rs'+paidNow+' made (total paid Rs'+totalPaid+' of Rs'+finalAmt+'). Balance Rs'+remaining+' — request stays at Account until settled.'});
   }else{
     upd.stage='InvoiceDesk';upd.assignedTo='';
     upd.overallStatus='Pending Invoice Desk — Closure 1';
-    logs.push({ts:new Date().toISOString(),by:user.name+' (Account)',note:status+' — Rs'+paidAmt+' paid. Forwarded to Invoice Desk.'});
+    logs.push({ts:new Date().toISOString(),by:user.name+' (Account)',note:'Full & Final payment recorded — Rs'+totalPaid+' paid in total. Forwarded to Invoice Desk.'});
   }
   upd.logs=JSON.stringify(logs);
   const r=await updateData(upd);
@@ -1135,16 +1153,30 @@ async function submitInvoiceDesk1(){
   else toast('Failed: '+(r&&r.error||''),'error');
 }
 
-function openReject(id,stageKey){
-  editId=id;editType='fleet';
+// Which earlier stages actually took part in THIS request's chain (skips FleetHOD/Purchase for Fast-track rows,
+// so Account can never "send back" to a desk that this particular request never passed through).
+function actualEarlierStages(stageKey,row){
   const idx=STAGE_ORDER.indexOf(stageKey);
-  const earlierStages=STAGE_ORDER.slice(0,idx).filter(s=>STAGE_ROLE[s]);
+  let earlier=STAGE_ORDER.slice(0,idx).filter(s=>STAGE_ROLE[s]);
+  if(row && row.approvalTrack==='Fast'){
+    earlier=earlier.filter(s=>s!=='FleetHOD' && s!=='Purchase');
+  }
+  return earlier;
+}
+function openReject(id,stageKey){
   const row=allData.find(d=>d.id===id);
+  const earlierStages=actualEarlierStages(stageKey,row);
+  if(!earlierStages.length){
+    toast('No earlier stage to send this back to — it is already at the first step.','error');
+    return;
+  }
+  editId=id;editType='fleet';
   $('edit-modal-title').textContent='SEND BACK — '+(row?row.vehicleNo:'');
   $('edit-modal-body').innerHTML=
-    '<div class="form-group"><label class="form-label req">Send back to stage</label><select id="rj-target">'+earlierStages.map(s=>'<option value="'+s+'">'+(STAGE_LABEL[s]||s)+'</option>').join('')+'</select></div>'
-    +'<div class="form-group"><label class="form-label">Send to specific person (optional)</label><select id="rj-person"><option value="">Any '+ (STAGE_LABEL[earlierStages[0]]||'') +' user</option></select></div>'
-    +'<div class="form-group"><label class="form-label req">Reason for rejection / what needs correction</label><textarea id="rj-reason" style="min-height:100px"></textarea></div>'
+    '<div class="info-banner">This is NOT a rejection. The request goes back to the person you pick below so they can correct it. Once they fix it and resubmit, it continues forward through the approval chain as normal.</div>'
+    +'<div class="form-group"><label class="form-label req">Send back to stage</label><select id="rj-target">'+earlierStages.slice().reverse().map(s=>'<option value="'+s+'">'+(STAGE_LABEL[s]||s)+'</option>').join('')+'</select></div>'
+    +'<div class="form-group"><label class="form-label">Send to specific person</label><select id="rj-person"></select><div style="font-size:11px;color:var(--muted);margin-top:4px">Defaults to the person who originally worked this stage. Leave as "Any" to let anyone in that role pick it up.</div></div>'
+    +'<div class="form-group"><label class="form-label req">Reason / what needs correction</label><textarea id="rj-reason" style="min-height:100px" placeholder="Be specific — this note is shown to the person you send it back to."></textarea></div>'
     +'<div style="display:flex;gap:10px"><button class="btn btn-danger" id="rj-submit-btn" onclick="submitReject(\''+stageKey+'\')">✕ SEND BACK</button><button class="btn btn-outline" onclick="closeModal(\'edit-modal\')">CANCEL</button></div>';
   $('rj-target').onchange=()=>populateRejectPersonList(row);
   populateRejectPersonList(row);
@@ -1171,13 +1203,14 @@ async function submitReject(stageKey){
   const row=allData.find(d=>d.id===editId);
   const btn=$('rj-submit-btn'); if(btn) btn.disabled=true;
   const logs=sl(row.logs);
-  logs.push({ts:new Date().toISOString(),by:user.name+' ('+user.role+')',note:'Sent back to '+(STAGE_LABEL[target]||target)+(person?' ('+person+')':'')+': '+reason});
+  const personName=person?((masters.users||[]).find(u=>u.userId===person)||{}).name:'';
+  logs.push({ts:new Date().toISOString(),by:user.name+' ('+user.role+')',note:'Sent back to '+(STAGE_LABEL[target]||target)+(person?' — assigned to '+(personName||person):' — any '+(STAGE_LABEL[target]||target)+' user')+': '+reason});
   const statusField=STATUS_FIELD_MAP[stageKey];
-  const upd={...row,stage:target,assignedTo:person||'',sentBackFrom:stageKey,sentBackTo:target,overallStatus:'Rejected — Returned to '+(STAGE_LABEL[target]||target),rejectedReason:reason,logs:JSON.stringify(logs)};
-  if(statusField)upd[statusField]='Rejected';
+  const upd={...row,stage:target,assignedTo:person||'',sentBackFrom:stageKey,sentBackTo:target,overallStatus:'Sent Back — Returned to '+(STAGE_LABEL[target]||target),rejectedReason:reason,logs:JSON.stringify(logs)};
+  if(statusField)upd[statusField]='Sent Back';
   const r=await updateData(upd);
   if(btn) btn.disabled=false;
-  if(r&&r.success){toast('Sent back to '+(STAGE_LABEL[target]||target));closeModal('edit-modal');await loadData();}
+  if(r&&r.success){toast('Sent back to '+(STAGE_LABEL[target]||target)+(personName?' ('+personName+')':''));closeModal('edit-modal');await loadData();}
   else toast('Failed','error');
 }
 
@@ -1255,7 +1288,7 @@ function openDetail(id){
     +'<strong style="color:var(--text)">Work Details:</strong> '+(row.workDetails||'—')+'<br>'
     +'<strong style="color:var(--text)">Vendor:</strong> '+(row.vendorName||'—')+' | <strong style="color:var(--text)">Estimate:</strong> '+inr(row.estimateAmount)+'<br>'
     +'<strong style="color:var(--text)">Negotiated (Purchase):</strong> '+inr(row.purchaseNegotiatedAmount)+' | <strong style="color:var(--text)">Fleet Desk Final:</strong> '+inr(row.fleetFinalAmount)+' | <strong style="color:var(--text)">Account Final:</strong> '+inr(row.accountFinalAmount)+'<br>'
-    +'<strong style="color:var(--text)">Payment:</strong> '+(row.accountPaidStatus||'—')+' ('+(row.paymentType||'—')+') — Paid Rs'+(row.paidAmount||'0')+', Remaining Rs'+(row.remainingAmount||'0')+'<br>'
+    +'<strong style="color:var(--text)">Payment:</strong> '+(row.accountPaidStatus||'—')+(row.accountPaidStatus==='Partially Paid'?' — Advance/Partial':row.accountPaidStatus==='Paid'?' — Full & Final':'')+' — Paid '+inr(row.paidAmount)+', Balance '+inr(row.remainingAmount)+'<br>'
     +'<strong style="color:var(--text)">Invoice Copy:</strong> '+(row.finalInvoiceCopy?'<a href="'+row.finalInvoiceCopy+'" target="_blank" style="color:var(--blue)">Open</a>':'—')+' | <strong style="color:var(--text)">Invoice No:</strong> '+(row.closureInvoiceNo||'—')+' | <strong style="color:var(--text)">Hardcopy:</strong> '+(row.hardcopyStatus||'Pending')
     +'</div>'
     +'<div style="max-height:220px;overflow-y:auto">'
@@ -1315,12 +1348,15 @@ function renderMyRequests(d){
   list.innerHTML=d.map(r=>{
     const logs=sl(r.logs);
     const last=logs.length?logs[logs.length-1]:null;
-    return '<div class="approval-card" style="border-left-color:'+(r.stage==='Done'?'var(--green)':(r.overallStatus||'').indexOf('Rejected')===0?'var(--danger)':'var(--gold)')+'">'
+    const sentBackToMe = r.stage==='ADM' && (r.overallStatus||'').indexOf('Sent Back')===0;
+    return '<div class="approval-card" style="border-left-color:'+(r.stage==='Done'?'var(--green)':(r.overallStatus||'').indexOf('Rejected — Closed')===0?'var(--danger)':sentBackToMe?'var(--cyan)':'var(--gold)')+'">'
       +'<div class="approval-hdr"><div><div class="approval-id">'+r.vehicleNo+' — '+fd(r.reqDate)+'</div><div class="approval-meta">'+(r.district||'—')+' / '+(r.cluster||'—')+'</div></div>'+stageBadge(r)+'</div>'
       +stageTrack(r)
       +(r.rejectedReason?'<div class="reject-banner">Returned reason: '+r.rejectedReason+'</div>':'')
       +(last?'<div style="font-size:11px;color:var(--muted);margin-bottom:10px;padding:7px 10px;background:var(--surface2);border:1px solid var(--border)"><strong style="color:var(--muted2)">'+last.by+':</strong> '+last.note+'</div>':'')
-      +'<button class="btn btn-outline btn-sm" onclick="openDetail(\''+r.id+'\')">📋 Full Detail</button></div>';
+      +'<div style="display:flex;gap:8px">'
+      +(sentBackToMe?'<button class="btn btn-warning btn-sm" onclick="openStageModal(\''+r.id+'\',\'ADM\')">✏️ CORRECT & RESUBMIT</button>':'')
+      +'<button class="btn btn-outline btn-sm" onclick="openDetail(\''+r.id+'\')">📋 Full Detail</button></div></div>';
   }).join('');
 }
 
@@ -1415,11 +1451,59 @@ function renderMyOtr(d){
   em.style.display='none';
   list.innerHTML=d.map(r=>{
     const items=sl(r.itemsJson);
-    return '<div class="approval-card" style="border-left-color:'+(r.stage==='Done'?'var(--green)':'var(--gold)')+'">'
+    const sentBackToMe = r.stage==='ADM' && (r.overallStatus||'').indexOf('Sent Back')===0;
+    return '<div class="approval-card" style="border-left-color:'+(r.stage==='Done'?'var(--green)':sentBackToMe?'var(--cyan)':'var(--gold)')+'">'
       +'<div class="approval-hdr"><div><div class="approval-id">'+r.vehicleNo+' — '+fd(r.reqDate)+'</div><div class="approval-meta">'+items.length+' part line(s)</div></div>'+(OTR_STAGE_LABEL[r.stage]?'<span class="badge badge-pending">'+OTR_STAGE_LABEL[r.stage]+'</span>':'')+'</div>'
       +(r.rejectedReason?'<div class="reject-banner">Returned reason: '+r.rejectedReason+'</div>':'')
-      +'<button class="btn btn-outline btn-sm" onclick="openOtrDetail(\''+r.id+'\')">📋 Full Detail</button></div>';
+      +'<div style="display:flex;gap:8px">'
+      +(sentBackToMe?'<button class="btn btn-warning btn-sm" onclick="openOtrResubmit(\''+r.id+'\')">✏️ CORRECT & RESUBMIT</button>':'')
+      +'<button class="btn btn-outline btn-sm" onclick="openOtrDetail(\''+r.id+'\')">📋 Full Detail</button></div></div>';
   }).join('');
+}
+// ---- ADM corrects an OTR that was sent back to them, then resubmits to Fleet Desk ----
+function otrEditRowHtml(it){
+  it=it||{};
+  return '<tr><td><input type="text" class="oedit-partno" value="'+(it.partNo||'')+'"></td>'
+    +'<td><input type="text" class="oedit-partname" value="'+(it.partName||'')+'"></td>'
+    +'<td><input type="number" class="oedit-qty" value="'+(it.qty||'')+'" style="width:70px"></td>'
+    +'<td><input type="text" class="oedit-unit" value="'+(it.unit||'')+'" style="width:70px"></td>'
+    +'<td><input type="text" class="oedit-remarks" value="'+(it.remarks||'')+'"></td>'
+    +'<td><button class="btn btn-outline btn-sm" onclick="this.closest(\'tr\').remove()">✕</button></td></tr>';
+}
+function addOtrEditItemRow(){ $('oedit-items-tbody').insertAdjacentHTML('beforeend', otrEditRowHtml()); }
+function openOtrResubmit(id){
+  const row=otrData.find(d=>d.id===id);if(!row)return;
+  editId=id;editType='otr';
+  const items=sl(row.itemsJson);
+  $('edit-modal-title').textContent='CORRECT & RESUBMIT OTR — '+row.vehicleNo;
+  const rowsHtml=(items.length?items:[{}]).map(otrEditRowHtml).join('');
+  $('edit-modal-body').innerHTML=
+    '<div class="reject-banner">Sent back reason: '+(row.rejectedReason||'—')+'</div>'
+    +'<div class="table-wrap" style="margin-bottom:10px"><table><thead><tr><th>Part No</th><th>Part Name</th><th>Qty</th><th>Unit</th><th>Remarks</th><th></th></tr></thead><tbody id="oedit-items-tbody">'+rowsHtml+'</tbody></table></div>'
+    +'<button class="btn btn-outline btn-sm" style="margin-bottom:14px" onclick="addOtrEditItemRow()">+ Add Part Line</button>'
+    +'<div class="form-group"><label class="form-label">Remarks</label><textarea id="oedit-remarks">'+(row.remarks||'')+'</textarea></div>'
+    +'<div style="display:flex;gap:10px;margin-top:10px"><button class="btn btn-success" id="oedit-submit-btn" onclick="submitOtrResubmit()">✓ RESUBMIT TO FLEET DESK</button><button class="btn btn-outline" onclick="closeModal(\'edit-modal\')">CANCEL</button></div>';
+  $('edit-modal').classList.add('open');
+}
+async function submitOtrResubmit(){
+  const row=otrData.find(d=>d.id===editId);
+  const rows=[...document.querySelectorAll('#oedit-items-tbody tr')];
+  const items=rows.map(tr=>({
+    partNo:tr.querySelector('.oedit-partno').value.trim(),
+    partName:tr.querySelector('.oedit-partname').value.trim(),
+    qty:tr.querySelector('.oedit-qty').value.trim(),
+    unit:tr.querySelector('.oedit-unit').value.trim(),
+    remarks:tr.querySelector('.oedit-remarks').value.trim()
+  })).filter(it=>it.partNo||it.partName);
+  if(!items.length){toast('Add at least one part line','error');return;}
+  const btn=$('oedit-submit-btn'); if(btn) btn.disabled=true;
+  const logs=sl(row.logs);
+  logs.push({ts:new Date().toISOString(),by:user.name+' (ADM)',note:'Corrected per return reason & resubmitted to Fleet Desk'});
+  const upd={...row,itemsJson:JSON.stringify(items),remarks:$('oedit-remarks').value,stage:'FleetDesk',assignedTo:'',overallStatus:'Pending Fleet Desk Review',rejectedReason:'',logs:JSON.stringify(logs)};
+  const r=await updateOtrData(upd);
+  if(btn) btn.disabled=false;
+  if(r&&r.success){toast('Resubmitted to Fleet Desk ✓');closeModal('edit-modal');await loadData();}
+  else toast('Failed','error');
 }
 function openOtrDetail(id){
   const row=otrData.find(d=>d.id===id);if(!row)return;
@@ -1450,7 +1534,7 @@ function renderOtrActions(d){
     let actionBtn='';
     if(user.role==='FleetDesk') actionBtn='<button class="btn btn-success btn-sm" onclick="openOtrStageModal(\''+r.id+'\',\'FleetDesk\')">✓ APPROVE & FORWARD TO PURCHASE</button>';
     else if(user.role==='Purchase') actionBtn='<button class="btn btn-success btn-sm" onclick="openOtrStageModal(\''+r.id+'\',\'Purchase\')">✓ PROCURED — FORWARD TO ACCOUNT</button>';
-    else if(user.role==='Account') actionBtn='<button class="btn btn-success btn-sm" onclick="openOtrAccountModal(\''+r.id+'\')">💳 RECORD PAYMENT</button>';
+    else if(user.role==='Account') actionBtn='<button class="btn btn-success btn-sm" onclick="openOtrAccountModal(\''+r.id+'\')">💳 '+(r.accountPaidStatus==='Partially Paid'?'SETTLE BALANCE ('+inr(r.remainingAmount)+')':'RECORD PAYMENT')+'</button>';
     else if(user.role==='InvoiceDesk') actionBtn = r.stage==='InvoiceDesk' ? '<button class="btn btn-success btn-sm" onclick="openOtrInvoiceModal(\''+r.id+'\')">🧾 CLOSURE 1</button>' : '';
     return '<div class="approval-card"><div class="approval-hdr"><div><div class="approval-id">'+r.vehicleNo+'</div><div class="approval-meta">'+fd(r.reqDate)+' | '+items.length+' part line(s) | Raised by '+(r.admName||'—')+'</div></div>'+(OTR_STAGE_LABEL[r.stage]?'<span class="badge badge-pending">'+OTR_STAGE_LABEL[r.stage]+'</span>':'')+'</div>'
       +'<div class="approval-actions">'+actionBtn
@@ -1493,25 +1577,52 @@ async function submitOtrStage(stageKey){
 function openOtrAccountModal(id){
   const row=otrData.find(d=>d.id===id);if(!row)return;
   editId=id;editType='otr';
+  const finalAmt=parseFloat(row.accountFinalAmount||row.purchaseAmount||0);
+  const paidSoFar=parseFloat(row.paidAmount||0);
+  const balance=Math.max(0,finalAmt-paidSoFar);
   $('edit-modal-title').textContent='OTR ACCOUNT — RECORD PAYMENT — '+row.vehicleNo;
-  $('edit-modal-body').innerHTML='<div class="form-grid">'
+  $('edit-modal-body').innerHTML=
+    (paidSoFar>0?'<div class="info-banner">Already paid so far: <strong>'+inr(paidSoFar)+'</strong> &nbsp;|&nbsp; Balance due: <strong>'+inr(balance)+'</strong></div>':'')
+    +'<div class="form-grid">'
     +'<div class="form-group req"><label class="form-label req">Final Amount (Rs)</label><input type="number" id="oac-final" value="'+(row.accountFinalAmount||row.purchaseAmount||'')+'"></div>'
-    +'<div class="form-group"><label class="form-label">Payment Status</label><select id="oac-status"><option>Not Paid</option><option>Partially Paid</option><option>Paid</option></select></div>'
-    +'<div class="form-group"><label class="form-label">Amount Paid Now</label><input type="number" id="oac-paid" value="'+(row.paidAmount||'')+'"></div>'
+    +'<div class="form-group"><label class="form-label req">Payment Type</label><select id="oac-status">'
+      +'<option value="Not Paid">Not Paid — hold, no payment yet</option>'
+      +'<option value="Partially Paid">Partial Payment / Advance — balance remains at Account</option>'
+      +'<option value="Paid">Full &amp; Final Payment — closes out, forwards to Invoice Desk</option>'
+      +'</select></div>'
+    +'<div class="form-group"><label class="form-label">Amount Paid Now</label><input type="number" id="oac-paid" placeholder="e.g. advance amount"></div>'
     +'<div class="form-group span2"><label class="form-label">Remarks</label><textarea id="oac-remarks">'+(row.accountRemarks||'')+'</textarea></div></div>'
-    +'<div style="display:flex;gap:10px;margin-top:10px"><button class="btn btn-success" onclick="submitOtrAccount()">✓ SAVE</button><button class="btn btn-outline" onclick="closeModal(\'edit-modal\')">CANCEL</button></div>';
+    +'<div class="info-banner">"Not Paid" and "Partial Payment / Advance" keep this request at Account — it only moves to Invoice Desk once "Full &amp; Final Payment" is recorded. Amounts entered here add to the running total already paid.</div>'
+    +'<div style="display:flex;gap:10px;margin-top:10px"><button class="btn btn-success" id="oac-submit-btn" onclick="submitOtrAccount()">✓ SAVE</button><button class="btn btn-outline" onclick="closeModal(\'edit-modal\')">CANCEL</button></div>';
   $('edit-modal').classList.add('open');
 }
 async function submitOtrAccount(){
   const row=otrData.find(d=>d.id===editId);
-  const finalAmt=$('oac-final').value,status=$('oac-status').value,paid=$('oac-paid').value||'0';
+  const finalAmt=parseFloat($('oac-final').value||0),status=$('oac-status').value,paidNow=parseFloat($('oac-paid').value||0);
   if(!finalAmt){toast('Final amount required','error');return;}
+  if(status!=='Not Paid' && paidNow<=0){toast('Enter the amount paid now','error');return;}
+  const btn=$('oac-submit-btn'); if(btn) btn.disabled=true;
   const logs=sl(row.logs);
-  const upd={...row,accountId:user.userId,accountName:user.name,accountDate:nowDate(),accountFinalAmount:finalAmt,accountPaidStatus:status,paidAmount:paid,remainingAmount:String(Math.max(0,parseFloat(finalAmt)-parseFloat(paid||0))),paymentDate:nowDate(),accountRemarks:$('oac-remarks').value};
-  if(status==='Not Paid'){upd.overallStatus='Pending Account — Not Paid';logs.push({ts:new Date().toISOString(),by:user.name+' (Account)',note:'Marked Not Paid, held at Account'});}
-  else{upd.stage='InvoiceDesk';upd.assignedTo='';upd.overallStatus='Pending Invoice Desk';logs.push({ts:new Date().toISOString(),by:user.name+' (Account)',note:status+' Rs'+paid+', forwarded to Invoice Desk'});}
+  const priorPaid=parseFloat(row.paidAmount||0);
+  const totalPaid = status==='Not Paid' ? priorPaid : priorPaid+paidNow;
+  const remaining = Math.max(0, finalAmt-totalPaid);
+  const effectiveStatus = status!=='Not Paid' && remaining<=0 ? 'Paid' : status;
+  const upd={...row,accountId:user.userId,accountName:user.name,accountDate:nowDate(),accountFinalAmount:String(finalAmt),accountPaidStatus:effectiveStatus,paymentType:effectiveStatus==='Paid'?'Full':'Partial',paidAmount:String(totalPaid),remainingAmount:String(remaining),paymentDate:nowDate(),accountRemarks:$('oac-remarks').value};
+  if(effectiveStatus==='Not Paid'){
+    upd.overallStatus='Pending Account — Not Paid';
+    logs.push({ts:new Date().toISOString(),by:user.name+' (Account)',note:'Marked Not Paid, held at Account'});
+  }else if(effectiveStatus==='Partially Paid'){
+    upd.stage='Account';upd.assignedTo='';
+    upd.overallStatus='Partial Payment Made — Balance '+inr(remaining)+' Pending at Account';
+    logs.push({ts:new Date().toISOString(),by:user.name+' (Account)',note:'Advance/Partial payment of Rs'+paidNow+' made (total paid Rs'+totalPaid+' of Rs'+finalAmt+'). Balance Rs'+remaining+' — stays at Account.'});
+  }else{
+    upd.stage='InvoiceDesk';upd.assignedTo='';
+    upd.overallStatus='Pending Invoice Desk';
+    logs.push({ts:new Date().toISOString(),by:user.name+' (Account)',note:'Full & Final payment — Rs'+totalPaid+' paid in total, forwarded to Invoice Desk'});
+  }
   upd.logs=JSON.stringify(logs);
   const r=await updateOtrData(upd);
+  if(btn) btn.disabled=false;
   if(r&&r.success){toast('Saved ✓');closeModal('edit-modal');await loadData();}
   else toast('Failed','error');
 }
@@ -1540,24 +1651,42 @@ async function submitOtrInvoice(){
 }
 function openOtrReject(id){
   const row=otrData.find(d=>d.id===id);if(!row)return;
-  editId=id;editType='otr';
   const idx=OTR_STAGE_ORDER.indexOf(row.stage);
   const earlier=OTR_STAGE_ORDER.slice(0,idx);
+  if(!earlier.length){
+    toast('No earlier stage to send this back to — it is already at the first step.','error');
+    return;
+  }
+  editId=id;editType='otr';
   $('edit-modal-title').textContent='SEND BACK OTR — '+row.vehicleNo;
-  $('edit-modal-body').innerHTML='<div class="form-group"><label class="form-label req">Send back to</label><select id="orj-target">'+earlier.map(s=>'<option value="'+s+'">'+(OTR_STAGE_LABEL[s]||s)+'</option>').join('')+'</select></div>'
-    +'<div class="form-group"><label class="form-label req">Reason</label><textarea id="orj-reason" style="min-height:100px"></textarea></div>'
-    +'<div style="display:flex;gap:10px"><button class="btn btn-danger" onclick="submitOtrReject()">✕ SEND BACK</button><button class="btn btn-outline" onclick="closeModal(\'edit-modal\')">CANCEL</button></div>';
+  $('edit-modal-body').innerHTML=
+    '<div class="info-banner">This is NOT a rejection. The OTR goes back to the person you pick below so they can correct it, then resubmit — it continues forward normally from there.</div>'
+    +'<div class="form-group"><label class="form-label req">Send back to</label><select id="orj-target">'+earlier.slice().reverse().map(s=>'<option value="'+s+'">'+(OTR_STAGE_LABEL[s]||s)+'</option>').join('')+'</select></div>'
+    +'<div class="form-group"><label class="form-label">Send to specific person</label><select id="orj-person"></select><div style="font-size:11px;color:var(--muted);margin-top:4px">Leave as "Any" to let anyone in that role pick it up.</div></div>'
+    +'<div class="form-group"><label class="form-label req">Reason / what needs correction</label><textarea id="orj-reason" style="min-height:100px"></textarea></div>'
+    +'<div style="display:flex;gap:10px"><button class="btn btn-danger" id="orj-submit-btn" onclick="submitOtrReject()">✕ SEND BACK</button><button class="btn btn-outline" onclick="closeModal(\'edit-modal\')">CANCEL</button></div>';
+  $('orj-target').onchange=()=>populateOtrRejectPersonList(row);
+  populateOtrRejectPersonList(row);
   $('edit-modal').classList.add('open');
 }
+function populateOtrRejectPersonList(row){
+  const target=$('orj-target').value; // for OTR, stage key === role name (except ADM)
+  const people=(masters.users||[]).filter(u=>u.role===target && (u.status||'Approved')==='Approved');
+  const sel=$('orj-person');
+  sel.innerHTML='<option value="">Any '+(OTR_STAGE_LABEL[target]||target)+' user</option>'+people.map(p=>'<option value="'+p.userId+'">'+p.name+' ('+p.userId+')</option>').join('');
+}
 async function submitOtrReject(){
-  const reason=$('orj-reason').value.trim(); const target=$('orj-target').value;
+  const reason=$('orj-reason').value.trim(); const target=$('orj-target').value; const person=$('orj-person').value;
   if(!reason){toast('Reason required','error');return;}
   const row=otrData.find(d=>d.id===editId);
+  const btn=$('orj-submit-btn'); if(btn) btn.disabled=true;
   const logs=sl(row.logs);
-  logs.push({ts:new Date().toISOString(),by:user.name+' ('+user.role+')',note:'Sent back to '+(OTR_STAGE_LABEL[target]||target)+': '+reason});
-  const upd={...row,stage:target,overallStatus:'Rejected — Returned to '+(OTR_STAGE_LABEL[target]||target),rejectedReason:reason,logs:JSON.stringify(logs)};
+  const personName=person?((masters.users||[]).find(u=>u.userId===person)||{}).name:'';
+  logs.push({ts:new Date().toISOString(),by:user.name+' ('+user.role+')',note:'Sent back to '+(OTR_STAGE_LABEL[target]||target)+(person?' — assigned to '+(personName||person):' — any '+(OTR_STAGE_LABEL[target]||target)+' user')+': '+reason});
+  const upd={...row,stage:target,assignedTo:person||'',sentBackFrom:row.stage,sentBackTo:target,overallStatus:'Sent Back — Returned to '+(OTR_STAGE_LABEL[target]||target),rejectedReason:reason,logs:JSON.stringify(logs)};
   const r=await updateOtrData(upd);
-  if(r&&r.success){toast('Sent back');closeModal('edit-modal');await loadData();}
+  if(btn) btn.disabled=false;
+  if(r&&r.success){toast('Sent back to '+(OTR_STAGE_LABEL[target]||target)+(personName?' ('+personName+')':''));closeModal('edit-modal');await loadData();}
   else toast('Failed','error');
 }
 
